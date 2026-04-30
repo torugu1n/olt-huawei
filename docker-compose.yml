@@ -1,0 +1,21 @@
+services:
+  olt-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: olt-manager
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_PATH: /data/olt_manager.db
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - olt_manager_data:/data
+      - olt_manager_logs:/app/backend/logs
+
+volumes:
+  olt_manager_data:
+  olt_manager_logs:

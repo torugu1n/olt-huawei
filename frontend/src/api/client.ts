@@ -1,0 +1,64 @@
+import axios from "axios";
+
+const api = axios.create({ baseURL: "/api" });
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(err);
+  }
+);
+
+export default api;
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+export const login = (username: string, password: string) =>
+  api.post("/auth/login", { username, password });
+
+export const getMe = () => api.get("/auth/me");
+export const listUsers = () => api.get("/auth/users");
+export const createUser = (data: object) => api.post("/auth/users", data);
+export const deleteUser = (id: number) => api.delete(`/auth/users/${id}`);
+export const toggleUser = (id: number) => api.put(`/auth/users/${id}/toggle`);
+export const changePassword = (data: object) => api.post("/auth/change-password", data);
+
+// ── OLT ───────────────────────────────────────────────────────────────────────
+export const getOltStatus = () => api.get("/olt/status");
+export const getDashboardSummary = () => api.get("/olt/dashboard-summary");
+export const getOltVersion = () => api.get("/olt/version");
+export const getBoards = () => api.get("/olt/boards");
+export const getAlarms = () => api.get("/olt/alarms");
+export const getAutofind = () => api.get("/olt/autofind");
+export const getOnts = (slot?: number, port?: number) => {
+  const params: Record<string, number> = {};
+  if (slot !== undefined) params.slot = slot;
+  if (port !== undefined) params.port = port;
+  return api.get("/olt/onts", { params });
+};
+export const getOnt = (slot: number, port: number, ontId: number) =>
+  api.get(`/olt/onts/${slot}/${port}/${ontId}`);
+export const provisionOnt = (data: object) => api.post("/olt/provision", data);
+export const deleteOnt = (slot: number, port: number, ontId: number) =>
+  api.delete(`/olt/onts/${slot}/${port}/${ontId}`);
+export const rebootOnt = (slot: number, port: number, ontId: number) =>
+  api.post(`/olt/onts/${slot}/${port}/${ontId}/reboot`);
+export const addServicePort = (data: object) => api.post("/olt/service-port", data);
+export const deleteServicePort = (index: number) => api.delete(`/olt/service-port/${index}`);
+export const getOntWan = (slot: number, port: number, ontId: number) =>
+  api.get(`/olt/onts/${slot}/${port}/${ontId}/wan`);
+export const getOntOptical = (slot: number, port: number, ontId: number) =>
+  api.get(`/olt/onts/${slot}/${port}/${ontId}/optical`);
+
+// ── Audit ─────────────────────────────────────────────────────────────────────
+export const getAuditLogs = (params?: object) => api.get("/audit/logs", { params });
