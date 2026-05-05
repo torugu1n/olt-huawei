@@ -232,13 +232,14 @@ export async function sendCommand(cmd, ms = 25_000) {
 }
 
 /** Executa vários comandos de configuração (envolve com config / quit). */
-export async function sendConfig(cmds, ms = 30_000) {
-  const results = await sendConfigBatch(cmds, ms);
+export async function sendConfig(cmds, ms = 30_000, options = {}) {
+  const results = await sendConfigBatch(cmds, ms, options);
   return results.join('');
 }
 
 /** Executa vários comandos de configuração na sessão persistente e retorna um output por comando. */
-export async function sendConfigBatch(cmds, ms = 30_000) {
+export async function sendConfigBatch(cmds, ms = 30_000, options = {}) {
+  const exitCommands = Math.max(1, Number(options.exitCommands ?? 1));
   const release = await mutex.acquire();
   try {
     const sess = await getSession();
@@ -247,7 +248,9 @@ export async function sendConfigBatch(cmds, ms = 30_000) {
     for (const cmd of cmds) {
       outputs.push(await sess.sendLine(cmd, ms));
     }
-    await sess.sendLine('quit', ms);   // sai do config mode
+    for (let i = 0; i < exitCommands; i += 1) {
+      await sess.sendLine('quit', ms);
+    }
     return outputs;
   } catch (err) {
     if (isReenterLimitError(err)) {

@@ -52,13 +52,16 @@ function buildDetailCacheKey(slot, port, ontId) {
 }
 
 async function runInGponInterface(slot, commands, timeout = 25_000) {
-  const outputs = await sendConfigBatch([
-    `interface gpon 0/${slot}`,
-    ...commands,
-    'quit',
-  ], timeout);
+  const outputs = await sendConfigBatch(
+    [
+      `interface gpon 0/${slot}`,
+      ...commands,
+    ],
+    timeout,
+    { exitCommands: 2 },
+  );
 
-  return outputs.slice(1, 1 + commands.length);
+  return outputs.slice(1);
 }
 
 async function runShowCommand(candidates, timeout, runner = sendCommand) {
@@ -175,8 +178,16 @@ export async function getServicePorts(slot, port, ontId) {
 
 export async function getOntDetailSnapshot(slot, port, ontId) {
   return withCache(buildDetailCacheKey(slot, port, ontId), TTL.ontDetail, async () => {
-    const { raw: infoRaw, info } = await getOntInfo(slot, port, ontId);
-    const { raw: opticalRaw, optical } = await getOntOptical(slot, port, ontId);
+    const [infoRaw, opticalRaw] = await runInGponInterface(
+      slot,
+      [
+        `display ont info ${port} ${ontId}`,
+        `display ont info summary ${port}`,
+      ],
+      25_000,
+    );
+    const info = parser.parseOntInfo(infoRaw);
+    const optical = parser.parseOpticalFromSummary(opticalRaw, ontId);
     const { raw: servicePortsRaw, servicePorts } = await getServicePorts(slot, port, ontId);
 
     return {
@@ -210,21 +221,27 @@ export async function getOntVersion(slot, port, ontId) {
 
 /** Registra ONT via SN e retorna o ONT ID atribuído. */
 export async function provisionOnt({ slot, port, sn, lineprofileId, srvprofileId, description }) {
-  const raw = await sendConfig([
-    `interface gpon 0/${slot}`,
-    `ont add ${port} sn-auth "${sn}" omci ont-lineprofile-id ${lineprofileId} ont-srvprofile-id ${srvprofileId} desc "${description}"`,
-    'quit',   // sai da interface (o sendConfig já envia o quit do config mode)
-  ]);
+  const raw = await sendConfig(
+    [
+      `interface gpon 0/${slot}`,
+      `ont add ${port} sn-auth "${sn}" omci ont-lineprofile-id ${lineprofileId} ont-srvprofile-id ${srvprofileId} desc "${description}"`,
+    ],
+    30_000,
+    { exitCommands: 2 },
+  );
   const m = raw.match(/ONTID\s*:\s*(\d+)/i);
   return { raw, ontId: m ? Number(m[1]) : null };
 }
 
 export async function configureOntNativeVlan({ slot, port, ontId, userVlan, ethPort = 1, priority = 0 }) {
-  return sendConfig([
-    `interface gpon 0/${slot}`,
-    `ont port native-vlan ${port} ${ontId} eth ${ethPort} vlan ${userVlan} priority ${priority}`,
-    'quit',
-  ]);
+  return sendConfig(
+    [
+      `interface gpon 0/${slot}`,
+      `ont port native-vlan ${port} ${ontId} eth ${ethPort} vlan ${userVlan} priority ${priority}`,
+    ],
+    30_000,
+    { exitCommands: 2 },
+  );
 }
 
 /** Cria um service-port com tag-transform translate. */
@@ -235,11 +252,14 @@ export async function addServicePort({ vlanId, slot, port, ontId, gemport, userV
 }
 
 export async function deleteOnt(slot, port, ontId) {
-  return sendConfig([
-    `interface gpon 0/${slot}`,
-    `ont delete ${port} ${ontId}`,
-    'quit',
-  ]);
+  return sendConfig(
+    [
+      `interface gpon 0/${slot}`,
+      `ont delete ${port} ${ontId}`,
+    ],
+    30_000,
+    { exitCommands: 2 },
+  );
 }
 
 export async function deleteServicePort(index) {
@@ -247,11 +267,14 @@ export async function deleteServicePort(index) {
 }
 
 export async function rebootOnt(slot, port, ontId) {
-  return sendConfig([
-    `interface gpon 0/${slot}`,
-    `ont reset ${port} ${ontId}`,
-    'quit',
-  ]);
+  return sendConfig(
+    [
+      `interface gpon 0/${slot}`,
+      `ont reset ${port} ${ontId}`,
+    ],
+    30_000,
+    { exitCommands: 2 },
+  );
 }
 
 export async function getDashboardSummary() {

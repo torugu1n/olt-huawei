@@ -70,22 +70,24 @@ export function Dashboard() {
   }).length;
 
   return (
-    <div className="space-y-6">
-      <header className="panel overflow-hidden px-6 py-6 md:px-8">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
+    <div className="space-y-7">
+      <header className="panel overflow-hidden px-7 py-7 md:px-9 md:py-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-end">
+          <div className="max-w-[52rem]">
             <div className="eyebrow mb-3">OLT Summary</div>
-            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-[3.25rem]">Estado operacional da MA5800-X2</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
+            <h2 className="font-display text-[1.9rem] font-semibold leading-[1.05] tracking-[-0.02em] text-ink-900 md:text-[2.45rem]">
+              Estado operacional da MA5800-X2
+            </h2>
+            <p className="mt-4 max-w-3xl text-[0.98rem] leading-8 text-ink-500">
               Visao consolidada da OLT, com inventario de ONTs, alarmes ativos e fila de provisionamento descoberta automaticamente.
             </p>
           </div>
 
-          <div className="panel-muted min-w-[18rem] px-4 py-4">
+          <div className="panel-muted px-5 py-5 xl:justify-self-end">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-[11px] uppercase tracking-[0.2em] text-ink-400">Link operacional</div>
-                <div className="mt-2 text-sm font-medium text-ink-800">
+                <div className="mt-3 text-[1rem] font-medium text-ink-800">
                   {status?.connected ? "Conectado e respondendo" : "Conexao degradada"}
                 </div>
               </div>
@@ -98,7 +100,7 @@ export function Dashboard() {
 
       {loading && <div className="panel-muted px-5 py-4 text-sm text-ink-500">Carregando telemetria da OLT...</div>}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-5 md:grid-cols-2 2xl:grid-cols-4">
         <StatCard
           label="ONTs online"
           value={ontsOnline}
@@ -130,7 +132,7 @@ export function Dashboard() {
         />
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid gap-7 2xl:grid-cols-[1.05fr_0.95fr]">
         <Section title="Boards e chassis" subtitle="Leitura resumida da control board e estado principal." link="/onts">
           {boards.length === 0 ? (
             <EmptyState text="Nenhuma board retornada pela OLT." />
@@ -258,21 +260,21 @@ function StatCard({ label, value, total, tone, link, note }: {
   } as const;
 
   const content = (
-    <div className={`relative overflow-hidden rounded-[1.25rem] border px-5 py-5 shadow-panel ${tones[tone].panel}`}>
+    <div className={`relative overflow-hidden rounded-[1.25rem] border px-6 py-6 shadow-panel ${tones[tone].panel}`}>
       <div className={`absolute inset-x-0 top-0 h-1 ${tones[tone].line}`} />
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{label}</div>
-          <div className="mt-4 text-4xl font-semibold leading-none text-ink-900">
+          <div className="mt-6 text-[2.15rem] font-semibold leading-none text-ink-900 md:text-[2.35rem]">
             {value}
-            {total !== undefined && <span className="ml-2 text-lg text-ink-400">/ {total}</span>}
+            {total !== undefined && <span className="ml-3 text-[1.2rem] text-ink-400">/ {total}</span>}
           </div>
         </div>
         <div className="font-mono rounded-full border border-white/80 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-ink-500">
           Live
         </div>
       </div>
-      {note && <div className="mt-5 text-sm text-ink-500">{note}</div>}
+      {note && <div className="mt-7 text-[0.98rem] text-ink-500">{note}</div>}
     </div>
   );
 
@@ -281,11 +283,11 @@ function StatCard({ label, value, total, tone, link, note }: {
 
 function Section({ title, subtitle, children, link }: { title: string; subtitle?: string; children: React.ReactNode; link?: string }) {
   return (
-    <section className="panel px-6 py-5 md:px-7">
-      <div className="mb-5 flex items-start justify-between gap-4">
+    <section className="panel px-7 py-6 md:px-8">
+      <div className="mb-6 flex items-start justify-between gap-5">
         <div>
-          <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-ink-900">{title}</h3>
-          {subtitle && <p className="mt-1 text-sm leading-6 text-ink-500">{subtitle}</p>}
+          <h3 className="font-display text-[1.3rem] font-semibold tracking-[-0.01em] text-ink-900">{title}</h3>
+          {subtitle && <p className="mt-2 text-[0.98rem] leading-8 text-ink-500">{subtitle}</p>}
         </div>
         {link && (
           <Link to={link} className="font-mono rounded-full border border-ink-200 bg-white/80 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white">

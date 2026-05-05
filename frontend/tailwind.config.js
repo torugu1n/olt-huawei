@@ -35,9 +35,18 @@ export default {
         display: ['"Schibsted Grotesk"', '"Public Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ['"IBM Plex Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
+      fontSize: {
+        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+        "h1": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "0.015em", "fontWeight": "400" }],
+        "h2": ["24px", { "lineHeight": "1.3", "letterSpacing": "0.01em", "fontWeight": "500" }],
+        "label-caps": ["12px", { "lineHeight": "1", "letterSpacing": "0.1em", "fontWeight": "700" }],
+        "mono-metric": ["14px", { "lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500" }],
+        "body-md": ["16px", { "lineHeight": "1.6", "letterSpacing": "0.015em", "fontWeight": "400" }]
+      },
       boxShadow: {
-        panel: "0 16px 36px -28px rgba(26, 36, 52, 0.18), 0 1px 0 rgba(255,255,255,0.75) inset",
-        float: "0 24px 60px -34px rgba(26, 36, 52, 0.22)",
+        panel: "0 20px 40px -30px rgba(55, 72, 104, 0.18), 0 1px 0 rgba(255,255,255,0.88) inset",
+        float: "0 26px 70px -38px rgba(55, 72, 104, 0.22)",
       },
     },
   },
