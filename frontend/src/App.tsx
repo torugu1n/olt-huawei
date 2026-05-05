@@ -11,6 +11,7 @@ import { Terminal } from "./pages/Terminal";
 import { AuditLogPage } from "./pages/AuditLog";
 import { Users } from "./pages/Users";
 import { TemplatesPage } from "./pages/Templates";
+import { ONTDetail } from "./pages/ONTDetail";
 import { useUISettings } from "./context/UISettingsContext";
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/alarms" element={<Alarms />} />
           <Route path="/onts" element={<ONTs />} />
+          <Route path="/onts/:slot/:port/:ont_id" element={<ONTDetail />} />
           <Route path="/autofind" element={<Autofind />} />
           <Route path="/provision" element={<Provision />} />
           <Route path="/terminal" element={<Terminal />} />

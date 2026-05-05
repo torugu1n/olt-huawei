@@ -4,16 +4,24 @@ import { deleteOnt, deleteServicePort, getOnt, getOntOptical, getOntWan, rebootO
 import { ONT, OpticalInfo, ServicePort } from "../types";
 import { StatusBadge } from "../components/StatusBadge";
 
+type OpticalSample = {
+  ts: number;
+  rx: number | null;
+  tx: number | null;
+};
+
 export function ONTDetail() {
   const { slot, port, ont_id } = useParams<{ slot: string; port: string; ont_id: string }>();
   const navigate = useNavigate();
   const [info, setInfo] = useState<ONT | null>(null);
   const [optical, setOptical] = useState<OpticalInfo | null>(null);
+  const [opticalHistory, setOpticalHistory] = useState<OpticalSample[]>([]);
   const [servicePorts, setServicePorts] = useState<ServicePort[]>([]);
   const [raw, setRaw] = useState<Record<string, string>>({});
   const [wanInfo, setWanInfo] = useState("");
   const [opticalError, setOpticalError] = useState("");
   const [loadingOptical, setLoadingOptical] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [opticalCooldownUntil, setOpticalCooldownUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [loading, setLoading] = useState(true);
@@ -22,20 +30,114 @@ export function ONTDetail() {
   const s = Number(slot);
   const p = Number(port);
   const o = Number(ont_id);
+  const historyStorageKey = useMemo(() => `ont-optical-history:${s}:${p}:${o}`, [s, p, o]);
+
+  const persistOpticalHistory = (samples: OpticalSample[]) => {
+    setOpticalHistory(samples);
+    localStorage.setItem(historyStorageKey, JSON.stringify(samples));
+  };
+
+  const appendOpticalSample = (source?: OpticalInfo | null) => {
+    const rx = parseNumeric(source?.rx_power_dbm);
+    const tx = parseNumeric(source?.tx_power_dbm);
+
+    if (!Number.isFinite(rx) && !Number.isFinite(tx)) {
+      return;
+    }
+
+    setOpticalHistory((prev) => {
+      const last = prev[prev.length - 1];
+      const nextSample: OpticalSample = {
+        ts: Date.now(),
+        rx: Number.isFinite(rx) ? rx : null,
+        tx: Number.isFinite(tx) ? tx : null,
+      };
+
+      if (
+        last &&
+        last.rx === nextSample.rx &&
+        last.tx === nextSample.tx &&
+        nextSample.ts - last.ts < 20_000
+      ) {
+        return prev;
+      }
+
+      const next = [...prev, nextSample].slice(-24);
+      localStorage.setItem(historyStorageKey, JSON.stringify(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
-    setLoading(true);
+    try {
+      const rawHistory = localStorage.getItem(historyStorageKey);
+      if (!rawHistory) {
+        setOpticalHistory([]);
+        return;
+      }
+
+      const parsed = JSON.parse(rawHistory) as OpticalSample[];
+      if (!Array.isArray(parsed)) {
+        setOpticalHistory([]);
+        return;
+      }
+
+      setOpticalHistory(
+        parsed
+          .filter((sample) => typeof sample?.ts === "number")
+          .slice(-24)
+          .map((sample) => ({
+            ts: sample.ts,
+            rx: typeof sample.rx === "number" ? sample.rx : null,
+            tx: typeof sample.tx === "number" ? sample.tx : null,
+          }))
+      );
+    } catch {
+      setOpticalHistory([]);
+    }
+  }, [historyStorageKey]);
+
+  const refreshDetail = async ({ silent = false }: { silent?: boolean } = {}) => {
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
     setError("");
-    getOnt(s, p, o)
-      .then(({ data }) => {
-        setInfo(data.info);
-        setOptical(data.optical);
-        setServicePorts(data.service_ports ?? []);
-        setRaw(data.raw ?? {});
-        setOpticalError("");
-      })
-      .catch((e) => setError(e?.response?.data?.detail ?? "Erro ao carregar ONT"))
-      .finally(() => setLoading(false));
+
+    try {
+      const { data } = await getOnt(s, p, o);
+      setInfo(data.info);
+      setOptical(data.optical);
+      setServicePorts(data.service_ports ?? []);
+      setRaw(data.raw ?? {});
+      setOpticalError("");
+      appendOpticalSample(data.optical);
+
+      if (!data.optical || Object.keys(data.optical).length === 0) {
+        await fetchOptical({ background: true });
+      }
+    } catch (e: any) {
+      setError(e?.response?.data?.detail ?? "Erro ao carregar ONT");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshDetail();
+  }, [s, p, o]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        refreshDetail({ silent: true });
+      }
+    }, 30_000);
+
+    return () => window.clearInterval(timer);
   }, [s, p, o]);
 
   useEffect(() => {
@@ -44,14 +146,18 @@ export function ONTDetail() {
     return () => window.clearInterval(timer);
   }, [opticalCooldownUntil]);
 
-  const loadOptical = async () => {
-    setLoadingOptical(true);
-    setOpticalError("");
+  const fetchOptical = async ({ background = false }: { background?: boolean } = {}) => {
+    if (!background) {
+      setLoadingOptical(true);
+      setOpticalError("");
+    }
+
     try {
       const { data } = await getOntOptical(s, p, o);
       setOptical(data.optical ?? {});
-      setRaw((prev) => ({ ...prev, optical: data.raw ?? "" }));
-      if (!data.optical || Object.keys(data.optical).length === 0) {
+      setRaw((prev) => ({ ...prev, optical: data.raw ?? prev.optical ?? "" }));
+      appendOpticalSample(data.optical);
+      if ((!data.optical || Object.keys(data.optical).length === 0) && !background) {
         setOpticalError("A OLT nao retornou o sinal óptico para esta ONT.");
       }
     } catch (e: any) {
@@ -60,7 +166,9 @@ export function ONTDetail() {
         ? "A OLT bloqueou temporariamente novas consultas SSH. Aguarde 60s antes de tentar novamente."
         : rawDetail;
 
-      setOpticalError(normalizedDetail);
+      if (!background) {
+        setOpticalError(normalizedDetail);
+      }
 
       if (/reenter times have reached the upper limit/i.test(String(rawDetail))) {
         setOpticalCooldownUntil(Date.now() + 60_000);
@@ -72,8 +180,14 @@ export function ONTDetail() {
         setOpticalCooldownUntil(Date.now() + Number(waitMatch[1]) * 1000);
       }
     } finally {
-      setLoadingOptical(false);
+      if (!background) {
+        setLoadingOptical(false);
+      }
     }
+  };
+
+  const loadOptical = async () => {
+    await fetchOptical();
   };
 
   const loadWan = async () => {
@@ -90,7 +204,7 @@ export function ONTDetail() {
   const handleReboot = async () => {
     if (!confirm("Reiniciar esta ONT?")) return;
     await rebootOnt(s, p, o);
-    alert("Reboot enviado");
+    alert("Comando de reboot enviado");
   };
 
   const handleDeleteSP = async (idx: number) => {
@@ -103,90 +217,87 @@ export function ONTDetail() {
   const rxPower = parseFloat(optical?.rx_power_dbm ?? "NaN");
   const txPower = parseFloat(optical?.tx_power_dbm ?? "NaN");
   const signalHealth = useMemo(() => getOpticalHealth(rxPower), [rxPower]);
-  const rxMeter = Number.isFinite(rxPower) ? clamp(((rxPower - -27) / (-8 - -27)) * 100, 0, 100) : 0;
-  const onlineDuration = info?.online_duration?.replace(/second\(s\).*/i, "s") ?? "—";
+  const onlineDuration = compactDuration(info?.online_duration ?? "—");
+  const signalMeterValue = Number.isFinite(rxPower) ? clamp(((rxPower - -27) / 19) * 100, 0, 100) : 0;
+  const latestOpticalTimestamp = opticalHistory.length > 0 ? opticalHistory[opticalHistory.length - 1]?.ts : null;
 
   if (loading) {
     return <div className="panel px-6 py-5 text-sm text-ink-500">Carregando telemetria da ONT...</div>;
   }
 
   if (error) {
-    return <div className="panel px-6 py-5 text-sm text-red-600">{error}</div>;
+    return <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>;
   }
 
   return (
-    <div className="space-y-6 rounded-[2rem] bg-[#0f131b] p-6 text-slate-100 shadow-[0_32px_80px_-50px_rgba(7,10,18,0.92)] ring-1 ring-white/6 md:p-8">
-      <header className="flex flex-col gap-6 border-b border-white/8 pb-6 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-500">
-            <span>Dispositivos</span>
-            <span>/</span>
-            <span>Monitoramento</span>
-            <span>/</span>
-            <span className="text-blue-400">{info?.description || info?.sn}</span>
+    <div className="space-y-6">
+      <header className="panel px-6 py-6 md:px-8">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <div className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-ink-400">
+              <span>Dispositivos</span>
+              <span>/</span>
+              <span>Monitoramento</span>
+              <span>/</span>
+              <span className="text-brand-700">{info?.description || info?.sn}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="font-display text-[2rem] font-semibold tracking-[-0.03em] text-ink-900 md:text-[2.75rem]">
+                ONT {info?.description ? `— ${info.description}` : `— ${info?.sn}`}
+              </h1>
+              <StatusBadge value={info?.run_state ?? "—"} />
+              <StatusBadge value={info?.config_state ?? "—"} />
+            </div>
+            <p className="mt-3 text-sm leading-7 text-ink-500">
+              ID {ont_id} • PON 0/{slot}/{port} • Serial {info?.sn}
+            </p>
+            {refreshing ? <p className="mt-2 text-xs text-ink-400">Atualizando leitura automaticamente...</p> : null}
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-3xl font-bold tracking-tight text-white md:text-4xl">
-              ONT {info?.description ? `— ${info.description}` : `— ${info?.sn}`}
-            </h1>
-            <StatusBadge value={info?.run_state ?? "—"} />
-            <StatusBadge value={info?.config_state ?? "—"} />
-          </div>
-          <p className="mt-3 text-sm text-slate-400">
-            ID {ont_id} • PON 0/{slot}/{port} • Serial {info?.sn}
-          </p>
-        </div>
 
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={handleReboot}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2.5 text-sm font-medium text-amber-200 transition hover:bg-amber-400/15"
-          >
-            Reboot
-          </button>
-          <button
-            onClick={handleDelete}
-            className="inline-flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-500/15"
-          >
-            Remover
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => refreshDetail()} className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-700 transition hover:bg-brand-100">
+              Atualizar
+            </button>
+            <button onClick={handleReboot} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800 transition hover:bg-amber-100">
+              Reboot
+            </button>
+            <button onClick={handleDelete} className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100">
+              Remover
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.25fr_0.9fr]">
-        <div className="space-y-6">
-          <MetricCard
-            title="Sinal Óptico RX"
-            tone={signalHealth.tone}
-            status={signalHealth.label}
-            value={Number.isFinite(rxPower) ? rxPower.toFixed(2) : "—"}
-            unit="dBm"
-            meter={rxMeter}
-            footer="-27 dBm crítico • -8 dBm máximo"
-          />
+      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          title="Sinal óptico RX"
+          value={Number.isFinite(rxPower) ? `${rxPower.toFixed(2)} dBm` : "Sem leitura"}
+          note="-27 dBm crítico • -8 dBm máximo"
+          accent={signalHealth.accent}
+          meter={signalMeterValue}
+        />
+        <MetricCard
+          title="Potência TX"
+          value={Number.isFinite(txPower) ? `${txPower.toFixed(2)} dBm` : "Sem leitura"}
+          note="Leitura da transmissão da ONT"
+          meter={Number.isFinite(txPower) ? clamp(((txPower + 5) / 10) * 100, 0, 100) : undefined}
+        />
+        <MetricCard
+          title="Tempo de atividade"
+          value={onlineDuration}
+          note={info?.last_up_time ? `Último up: ${info.last_up_time}` : "Sem timestamp de subida"}
+        />
+        <MetricCard
+          title="Perfis"
+          value={joinParts(info?.lineprofile_id, info?.srvprofile_id) ?? "—"}
+          note={joinParts(info?.lineprofile_name, info?.srvprofile_name) ?? "Sem nome de perfil"}
+        />
+      </section>
 
-          <MetricCard
-            title="Potência TX"
-            tone={Number.isFinite(txPower) ? "emerald" : "slate"}
-            status={Number.isFinite(txPower) ? "Estável" : "Sem leitura"}
-            value={Number.isFinite(txPower) ? txPower.toFixed(2) : "—"}
-            unit="dBm"
-          />
-
-          <MetricCard
-            title="Tempo de atividade"
-            tone="blue"
-            status={info?.last_restart_reason ? "Último reboot registrado" : "Operação contínua"}
-            value={compactDuration(onlineDuration)}
-            unit=""
-            footer={info?.last_up_time ? `Último up: ${info.last_up_time}` : "Sem timestamp de subida"}
-          />
-        </div>
-
-        <GlassCard title="Resumo Operacional" subtitle="Telemetria atual da ONT e parâmetros de sessão lidos diretamente da OLT.">
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <SectionCard title="Resumo operacional" subtitle="Identidade da ONT e parâmetros aplicados na sessão atual.">
           <div className="grid gap-6 lg:grid-cols-2">
             <InfoList
-              title="Identidade e sessão"
               rows={[
                 ["Descrição", info?.description],
                 ["Control flag", info?.control_flag],
@@ -197,7 +308,6 @@ export function ONTDetail() {
               ]}
             />
             <InfoList
-              title="Perfis aplicados"
               rows={[
                 ["Line profile", joinParts(info?.lineprofile_id, info?.lineprofile_name)],
                 ["Service profile", joinParts(info?.srvprofile_id, info?.srvprofile_name)],
@@ -208,135 +318,203 @@ export function ONTDetail() {
               ]}
             />
           </div>
+        </SectionCard>
 
-          <div className="mt-6 rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-semibold text-white">Sinal óptico detalhado</h3>
-                <p className="mt-1 text-xs text-slate-500">Consulta automática a partir do resumo da porta GPON.</p>
+        <SectionCard title="Sinal óptico" subtitle="Consulta da potência da ONT e métricas ópticas disponíveis para esta porta.">
+          {opticalHistory.length > 0 ? (
+            <div className="mb-5 rounded-[1.25rem] border border-ink-100 bg-ink-50/80 px-4 py-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-ink-400">Tendência recente</div>
+                  <div className="mt-1 text-sm text-ink-500">
+                    {latestOpticalTimestamp ? `Última amostra ${formatRelativeTime(latestOpticalTimestamp)}` : "Histórico local desta sessão"}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-400">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1">
+                    <span className="h-2 w-2 rounded-full bg-brand-500" />
+                    RX
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1">
+                    <span className="h-2 w-2 rounded-full bg-amber-400" />
+                    TX
+                  </span>
+                </div>
               </div>
-              {optical && Object.keys(optical).length > 0 ? <StatusBadge value={signalHealth.label} /> : null}
+              <OpticalTrendChart history={opticalHistory} />
             </div>
+          ) : null}
 
-            {optical && Object.keys(optical).length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <TelemetryChip label="RX Power" value={formatUnit(optical.rx_power_dbm, "dBm")} accent={signalHealth.accent} />
-                <TelemetryChip label="TX Power" value={formatUnit(optical.tx_power_dbm, "dBm")} accent="text-sky-300" />
-                <TelemetryChip label="OLT RX" value={formatUnit(optical.olt_rx_power_dbm, "dBm")} />
-                <TelemetryChip label="Temperatura" value={formatUnit(optical.temperature_c, "°C")} />
-                <TelemetryChip label="Tensão" value={formatUnit(optical.voltage_v, "V")} />
-                <TelemetryChip label="Corrente laser" value={formatUnit(optical.laser_bias_ma, "mA")} />
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-slate-400">Sem leitura óptica válida neste snapshot.</p>
-                <button
-                  onClick={loadOptical}
-                  disabled={loadingOptical || opticalCooldownSeconds > 0}
-                  className="inline-flex items-center gap-2 rounded-xl border border-blue-400/25 bg-blue-500/10 px-4 py-2.5 text-sm font-medium text-blue-200 transition hover:bg-blue-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {loadingOptical ? "Consultando sinal..." : opticalCooldownSeconds > 0 ? `Aguardar ${opticalCooldownSeconds}s` : "Carregar sinal óptico"}
-                </button>
-                {opticalError ? <p className="text-xs text-red-300">{opticalError}</p> : null}
-              </div>
-            )}
-          </div>
-        </GlassCard>
-
-        <GlassCard title="Hardware e histórico" subtitle="Campos estáveis da ONT úteis para diagnóstico e auditoria.">
-          <InfoList
-            rows={[
-              ["Distância", info?.distance_m ? `${info.distance_m} m` : undefined],
-              ["Software work mode", info?.software_work_mode],
-              ["Isolation state", info?.isolation_state],
-              ["Interoperability", info?.interoperability_mode],
-              ["Power reduction", info?.power_reduction_status],
-              ["Battery state", info?.battery_state],
-              ["Power type", info?.power_type],
-              ["CPU occupation", info?.cpu_occupation],
-              ["Memory occupation", info?.memory_occupation],
-              ["Last up time", info?.last_up_time],
-              ["Last down time", info?.last_down_time],
-              ["Last down cause", info?.last_down_cause],
-              ["Last restart reason", info?.last_restart_reason],
-            ]}
-          />
-        </GlassCard>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <GlassCard title="Service Ports" subtitle="Mapeamento de VLAN e GEM Port configurado para esta ONT.">
-          {servicePorts.length === 0 ? (
-            <p className="text-sm text-slate-500">Nenhum service-port configurado.</p>
+          {optical && Object.keys(optical).length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoTile label="RX Power" value={formatUnit(optical.rx_power_dbm, "dBm")} emphasis={signalHealth.accent === "brand" ? "brand" : signalHealth.accent === "danger" ? "danger" : "normal"} />
+              <InfoTile label="TX Power" value={formatUnit(optical.tx_power_dbm, "dBm")} />
+              <InfoTile label="OLT RX" value={formatUnit(optical.olt_rx_power_dbm, "dBm")} />
+              <InfoTile label="Temperatura" value={formatUnit(optical.temperature_c, "°C")} />
+              <InfoTile label="Tensão" value={formatUnit(optical.voltage_v, "V")} />
+              <InfoTile label="Corrente laser" value={formatUnit(optical.laser_bias_ma, "mA")} />
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[34rem] text-sm">
-                <thead>
-                  <tr className="border-b border-white/8 text-left text-[11px] uppercase tracking-[0.16em] text-slate-500">
-                    <th className="pb-3">Index</th>
-                    <th className="pb-3">VLAN</th>
-                    <th className="pb-3">GEM Port</th>
-                    <th className="pb-3">Estado</th>
-                    <th className="pb-3"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {servicePorts.map((sp) => (
-                    <tr key={sp.index} className="border-b border-white/8 last:border-0">
-                      <td className="py-3 font-mono text-slate-200">{sp.index}</td>
-                      <td className="py-3 text-slate-300">{sp.vlan}</td>
-                      <td className="py-3 text-slate-300">{sp.gemport}</td>
-                      <td className="py-3"><StatusBadge value={sp.state} /></td>
-                      <td className="py-3 text-right">
-                        <button onClick={() => handleDeleteSP(sp.index)} className="text-xs font-medium text-red-300 transition hover:text-red-200">
-                          Remover
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-3">
+              <p className="text-sm text-ink-500">Sem leitura óptica válida neste snapshot.</p>
+              <button
+                onClick={loadOptical}
+                disabled={loadingOptical || opticalCooldownSeconds > 0}
+                className="action-primary"
+              >
+                {loadingOptical ? "Consultando sinal..." : opticalCooldownSeconds > 0 ? `Aguardar ${opticalCooldownSeconds}s` : "Carregar sinal óptico"}
+              </button>
+              {opticalError ? <p className="text-xs text-red-700">{opticalError}</p> : null}
             </div>
           )}
-        </GlassCard>
+        </SectionCard>
+      </div>
 
-        <GlassCard title="Ações rápidas" subtitle="Consultas adicionais e blocos operacionais sob demanda.">
-          <div className="space-y-4">
-            <ActionPanel
-              title="WAN Info"
-              description="Carrega o retorno bruto da OLT para a sessão WAN desta ONT."
-              actionLabel={wanInfo ? "Atualizar WAN" : "Carregar WAN"}
-              onAction={loadWan}
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <SectionCard title="Hardware e histórico" subtitle="Campos estáveis da ONT úteis para diagnóstico e auditoria.">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <InfoList
+              rows={[
+                ["Distância", info?.distance_m ? `${info.distance_m} m` : undefined],
+                ["Software work mode", info?.software_work_mode],
+                ["Isolation state", info?.isolation_state],
+                ["Interoperability", info?.interoperability_mode],
+                ["Power reduction", info?.power_reduction_status],
+                ["Battery state", info?.battery_state],
+                ["Power type", info?.power_type],
+              ]}
             />
+            <InfoList
+              rows={[
+                ["CPU occupation", info?.cpu_occupation],
+                ["Memory occupation", info?.memory_occupation],
+                ["Last up time", info?.last_up_time],
+                ["Last down time", info?.last_down_time],
+                ["Last down cause", info?.last_down_cause],
+                ["Last restart reason", info?.last_restart_reason],
+              ]}
+            />
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Ações e WAN" subtitle="Ações rápidas e saídas auxiliares da OLT sob demanda.">
+          <div className="space-y-4">
+            <div className="panel-muted px-4 py-4">
+              <div className="text-sm font-medium text-ink-900">WAN Info</div>
+              <div className="mt-1 text-sm text-ink-500">Carrega o retorno bruto da OLT para a sessão WAN desta ONT.</div>
+              <button onClick={loadWan} className="action-secondary mt-4">
+                {wanInfo ? "Atualizar WAN" : "Carregar WAN"}
+              </button>
+            </div>
 
             {wanInfo ? (
-              <pre className="overflow-x-auto rounded-2xl border border-white/8 bg-[#0a0d14] p-4 text-xs text-slate-300 whitespace-pre-wrap">
+              <pre className="overflow-x-auto rounded-[1.25rem] border border-ink-200 bg-ink-900 p-4 text-xs text-emerald-300 whitespace-pre-wrap">
                 {wanInfo}
               </pre>
             ) : null}
           </div>
-        </GlassCard>
+        </SectionCard>
       </div>
 
-      <GlassCard title="Saída técnica da OLT" subtitle="Retorno bruto usado pelo parser atual para leitura e depuração.">
-        <div className="space-y-4">
-          {Object.entries(raw).map(([key, value]) => (
-            <div key={key} className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a0d14]">
-              <div className="border-b border-white/8 px-4 py-3 text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                {key}
+      <SectionCard title="Service Ports" subtitle="Mapeamento de VLAN e GEM Port configurado para esta ONT.">
+        {servicePorts.length === 0 ? (
+          <p className="text-sm text-ink-500">Nenhum service-port configurado.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[34rem] text-sm">
+              <thead className="border-b border-ink-100 bg-white/65">
+                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
+                  <th className="px-4 py-4">Index</th>
+                  <th className="px-4 py-4">VLAN</th>
+                  <th className="px-4 py-4">GEM Port</th>
+                  <th className="px-4 py-4">Estado</th>
+                  <th className="px-4 py-4 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {servicePorts.map((sp) => (
+                  <tr key={sp.index} className="border-b border-ink-100/80 last:border-0">
+                    <td className="px-4 py-4 font-mono text-xs text-ink-700">{sp.index}</td>
+                    <td className="px-4 py-4 text-ink-700">{sp.vlan}</td>
+                    <td className="px-4 py-4 text-ink-700">{sp.gemport}</td>
+                    <td className="px-4 py-4"><StatusBadge value={sp.state} /></td>
+                    <td className="px-4 py-4 text-right">
+                      <button onClick={() => handleDeleteSP(sp.index)} className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100">
+                        Remover
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Saída técnica da OLT" subtitle="Retorno bruto usado pelo parser atual para leitura e depuração.">
+        <details>
+          <summary className="cursor-pointer list-none rounded-[1rem] border border-ink-200 bg-white px-4 py-3 text-sm font-medium text-ink-800 transition hover:bg-ink-50">
+            Ver saída técnica da OLT
+          </summary>
+          <div className="mt-4 space-y-4">
+            {Object.entries(raw).map(([key, value]) => (
+              <div key={key} className="overflow-hidden rounded-[1.25rem] border border-ink-200 bg-white">
+                <div className="border-b border-ink-100 px-4 py-3 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">
+                  {key}
+                </div>
+                <pre className="overflow-x-auto bg-ink-900 px-4 py-4 text-xs text-emerald-300 whitespace-pre-wrap">
+                  {value}
+                </pre>
               </div>
-              <pre className="overflow-x-auto px-4 py-4 text-xs text-emerald-300 whitespace-pre-wrap">
-                {value}
-              </pre>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+            ))}
+          </div>
+        </details>
+      </SectionCard>
     </div>
   );
 }
 
-function GlassCard({
+function MetricCard({
+  title,
+  value,
+  note,
+  accent = "normal",
+  meter,
+}: {
+  title: string;
+  value: string;
+  note: string;
+  accent?: "normal" | "brand" | "danger";
+  meter?: number;
+}) {
+  const accentClass = {
+    normal: "border-ink-200 bg-white",
+    brand: "border-brand-200 bg-brand-50/60",
+    danger: "border-red-200 bg-red-50/65",
+  } as const;
+
+  return (
+    <div className={`panel px-6 py-6 ${accentClass[accent]}`}>
+      <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{title}</div>
+      <div className="mt-5 text-[2rem] font-semibold leading-none text-ink-900">{value}</div>
+      {meter !== undefined ? (
+        <div className="mt-5">
+          <div className="h-2 overflow-hidden rounded-full bg-ink-100">
+            <div
+              className={`h-full rounded-full ${
+                accent === "danger" ? "bg-red-400" : accent === "brand" ? "bg-brand-500" : "bg-ink-400"
+              }`}
+              style={{ width: `${meter}%` }}
+            />
+          </div>
+        </div>
+      ) : null}
+      <div className="mt-6 text-sm text-ink-500">{note}</div>
+    </div>
+  );
+}
+
+function SectionCard({
   title,
   subtitle,
   children,
@@ -346,145 +524,122 @@ function GlassCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.5rem] border border-white/8 bg-[#171c26]/88 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.9)] backdrop-blur-sm">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
-        {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+    <section className="panel px-6 py-6 md:px-7">
+      <div className="mb-6">
+        <h2 className="font-display text-[1.35rem] font-semibold tracking-[-0.02em] text-ink-900">{title}</h2>
+        {subtitle ? <p className="mt-2 text-[0.98rem] leading-8 text-ink-500">{subtitle}</p> : null}
       </div>
       {children}
     </section>
   );
 }
 
-function MetricCard({
-  title,
-  status,
+function InfoList({ rows }: { rows: Array<[string, React.ReactNode]> }) {
+  const visibleRows = rows.filter(([, value]) => value !== undefined && value !== null && value !== "");
+  return (
+    <div className="space-y-3">
+      {visibleRows.map(([label, value]) => (
+        <div key={label} className="panel-muted flex items-center justify-between gap-4 px-4 py-3">
+          <span className="text-sm text-ink-500">{label}</span>
+          <span className="text-right text-sm font-medium text-ink-900">{value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InfoTile({
+  label,
   value,
-  unit,
-  meter,
-  footer,
-  tone,
+  emphasis = "normal",
 }: {
-  title: string;
-  status: string;
+  label: string;
   value: string;
-  unit?: string;
-  meter?: number;
-  footer?: string;
-  tone: "emerald" | "amber" | "red" | "blue" | "slate";
+  emphasis?: "normal" | "brand" | "danger";
 }) {
-  const tones = {
-    emerald: {
-      badge: "bg-emerald-500/12 text-emerald-300 border-emerald-400/20",
-      meter: "from-emerald-400 to-teal-300",
-      value: "text-white",
-    },
-    amber: {
-      badge: "bg-amber-500/12 text-amber-300 border-amber-400/20",
-      meter: "from-amber-300 to-orange-300",
-      value: "text-white",
-    },
-    red: {
-      badge: "bg-red-500/12 text-red-300 border-red-400/20",
-      meter: "from-red-400 to-rose-300",
-      value: "text-white",
-    },
-    blue: {
-      badge: "bg-blue-500/12 text-blue-300 border-blue-400/20",
-      meter: "from-blue-400 to-cyan-300",
-      value: "text-white",
-    },
-    slate: {
-      badge: "bg-white/6 text-slate-300 border-white/10",
-      meter: "from-slate-500 to-slate-400",
-      value: "text-white",
-    },
+  const emphasisClass = {
+    normal: "text-ink-900",
+    brand: "text-brand-700",
+    danger: "text-red-700",
   } as const;
 
   return (
-    <div className="rounded-[1.5rem] border border-white/8 bg-[#171c26]/88 p-5 shadow-[0_18px_48px_-32px_rgba(0,0,0,0.9)]">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{title}</span>
-        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${tones[tone].badge}`}>
-          {status}
-        </span>
-      </div>
-      <div className="flex items-end gap-2">
-        <span className={`font-display text-4xl font-bold tracking-tight ${tones[tone].value}`}>{value}</span>
-        {unit ? <span className="mb-1 font-mono text-sm text-slate-500">{unit}</span> : null}
-      </div>
-      {meter !== undefined ? (
-        <>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/6">
-            <div className={`h-full rounded-full bg-gradient-to-r ${tones[tone].meter}`} style={{ width: `${meter}%` }} />
-          </div>
-          {footer ? <p className="mt-2 text-[11px] text-slate-500">{footer}</p> : null}
-        </>
-      ) : footer ? (
-        <p className="mt-3 text-[11px] text-slate-500">{footer}</p>
-      ) : null}
+    <div className="panel-muted px-4 py-4">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-ink-400">{label}</div>
+      <div className={`mt-2 text-sm font-semibold ${emphasisClass[emphasis]}`}>{value}</div>
     </div>
   );
 }
 
-function InfoList({
-  title,
-  rows,
-}: {
-  title?: string;
-  rows: Array<[string, React.ReactNode]>;
-}) {
-  const visibleRows = rows.filter(([, value]) => value !== undefined && value !== null && value !== "");
-  if (visibleRows.length === 0) return null;
+function OpticalTrendChart({ history }: { history: OpticalSample[] }) {
+  const points = history.slice(-12);
+  const rxValues = points.map((sample) => sample.rx).filter((value): value is number => typeof value === "number");
+  const txValues = points.map((sample) => sample.tx).filter((value): value is number => typeof value === "number");
+  const allValues = [...rxValues, ...txValues];
+
+  if (allValues.length === 0) {
+    return <p className="text-sm text-ink-500">Ainda não há pontos válidos para desenhar o gráfico.</p>;
+  }
+
+  const width = 640;
+  const height = 180;
+  const padding = 16;
+  const minValue = Math.floor(Math.min(...allValues, -27) - 1);
+  const maxValue = Math.ceil(Math.max(...allValues, 3) + 1);
+  const range = Math.max(1, maxValue - minValue);
+  const stepX = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
+
+  const toY = (value: number) => padding + ((maxValue - value) / range) * (height - padding * 2);
+  const buildPath = (key: "rx" | "tx") =>
+    points
+      .map((sample, index) => {
+        const value = sample[key];
+        if (typeof value !== "number") return null;
+        const x = padding + index * stepX;
+        const y = toY(value);
+        return `${index === 0 || points.slice(0, index).every((prev) => typeof prev[key] !== "number") ? "M" : "L"} ${x} ${y}`;
+      })
+      .filter(Boolean)
+      .join(" ");
+
+  const rxPath = buildPath("rx");
+  const txPath = buildPath("tx");
+  const guideValues = [maxValue, (maxValue + minValue) / 2, minValue];
 
   return (
-    <div>
-      {title ? <h3 className="mb-3 text-sm font-semibold text-slate-200">{title}</h3> : null}
-      <div className="space-y-2">
-        {visibleRows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4 rounded-xl border border-white/6 bg-white/[0.02] px-3 py-2.5">
-            <span className="text-sm text-slate-500">{label}</span>
-            <span className="text-right text-sm text-slate-200">{value}</span>
-          </div>
-        ))}
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-[1rem] border border-ink-100 bg-white px-3 py-3">
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full">
+          {guideValues.map((value) => {
+            const y = toY(value);
+            return (
+              <g key={value}>
+                <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="rgba(148, 163, 184, 0.24)" strokeDasharray="4 6" />
+                <text x={padding} y={y - 6} fill="rgba(100, 116, 139, 0.9)" fontSize="10">
+                  {value.toFixed(1)} dBm
+                </text>
+              </g>
+            );
+          })}
+
+          {rxPath ? <path d={rxPath} fill="none" stroke="rgb(79, 70, 229)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /> : null}
+          {txPath ? <path d={txPath} fill="none" stroke="rgb(245, 158, 11)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" /> : null}
+
+          {points.map((sample, index) => {
+            const x = padding + index * stepX;
+            return (
+              <g key={sample.ts}>
+                {typeof sample.rx === "number" ? <circle cx={x} cy={toY(sample.rx)} r="3.5" fill="rgb(79, 70, 229)" /> : null}
+                {typeof sample.tx === "number" ? <circle cx={x} cy={toY(sample.tx)} r="3" fill="rgb(245, 158, 11)" /> : null}
+              </g>
+            );
+          })}
+        </svg>
       </div>
-    </div>
-  );
-}
-
-function TelemetryChip({ label, value, accent = "text-slate-200" }: { label: string; value: string; accent?: string }) {
-  return (
-    <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-3">
-      <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</div>
-      <div className={`mt-2 text-sm font-semibold ${accent}`}>{value}</div>
-    </div>
-  );
-}
-
-function ActionPanel({
-  title,
-  description,
-  actionLabel,
-  onAction,
-}: {
-  title: string;
-  description: string;
-  actionLabel: string;
-  onAction: () => void;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-sm font-semibold text-white">{title}</h3>
-          <p className="mt-1 text-sm text-slate-500">{description}</p>
-        </div>
-        <button
-          onClick={onAction}
-          className="rounded-xl border border-blue-400/25 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-200 transition hover:bg-blue-500/15"
-        >
-          {actionLabel}
-        </button>
+      <div className="flex items-center justify-between text-xs text-ink-400">
+        <span>{points.length > 1 ? formatShortTime(points[0].ts) : "agora"}</span>
+        <span>{points.length} amostras locais</span>
+        <span>{formatShortTime(points[points.length - 1].ts)}</span>
       </div>
     </div>
   );
@@ -512,18 +667,34 @@ function compactDuration(value: string) {
 }
 
 function getOpticalHealth(rxPower: number) {
-  if (!Number.isFinite(rxPower)) {
-    return { label: "Sem leitura", tone: "slate" as const, accent: "text-slate-200" };
-  }
-  if (rxPower <= -27) {
-    return { label: "Crítico", tone: "red" as const, accent: "text-red-300" };
-  }
-  if (rxPower <= -24) {
-    return { label: "Atenção", tone: "amber" as const, accent: "text-amber-300" };
-  }
-  return { label: "Saudável", tone: "emerald" as const, accent: "text-emerald-300" };
+  if (!Number.isFinite(rxPower)) return { accent: "normal" as const };
+  if (rxPower <= -27) return { accent: "danger" as const };
+  if (rxPower <= -24) return { accent: "brand" as const };
+  return { accent: "brand" as const };
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function parseNumeric(value?: string) {
+  if (!value) return Number.NaN;
+  const normalized = String(value).replace(",", ".").match(/-?\d+(?:\.\d+)?/);
+  return normalized ? Number(normalized[0]) : Number.NaN;
+}
+
+function formatRelativeTime(timestamp: number) {
+  const diffSeconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+  if (diffSeconds < 60) return `${diffSeconds}s atrás`;
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (diffMinutes < 60) return `${diffMinutes}min atrás`;
+  const diffHours = Math.round(diffMinutes / 60);
+  return `${diffHours}h atrás`;
+}
+
+function formatShortTime(timestamp: number) {
+  return new Date(timestamp).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }

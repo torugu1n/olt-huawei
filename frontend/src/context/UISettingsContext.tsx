@@ -1,24 +1,29 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
+type ThemeMode = "light" | "dark";
 type Locale = "pt" | "en";
 
 type MessageValue = string | ((params?: Record<string, string | number>) => string);
 
 interface UISettingsContextValue {
+  theme: ThemeMode;
   locale: Locale;
+  setTheme: (theme: ThemeMode) => void;
+  toggleTheme: () => void;
   setLocale: (locale: Locale) => void;
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 const UISettingsContext = createContext<UISettingsContextValue | null>(null);
 
+const THEME_KEY = "olt_theme";
 const LOCALE_KEY = "olt_locale";
 
 const messages: Record<Locale, Record<string, MessageValue>> = {
   pt: {
     "skip.content": "Pular para o conteudo",
-    "app.title": "OLT Manager",
-    "app.subtitle": "Huawei MA5800-X2 · Secretaria da Administração",
+    "app.title": "Huawei MA5800-X2",
+    "app.subtitle": "Secretaria da Administração",
     "search.placeholder": "Buscar ONT, serial, PON ou alarmes...",
     "session.label": "Sessão",
     "sidebar.collapse": "Recolher barra lateral",
@@ -31,7 +36,6 @@ const messages: Record<Locale, Record<string, MessageValue>> = {
     "nav.terminal": "Terminal",
     "nav.audit": "Auditoria",
     "nav.users": "Usuários",
-    "nav.templates": "Templates",
     "group.operations": "Operação",
     "group.management": "Gestão",
     "group.admin": "Administração",
@@ -46,26 +50,17 @@ const messages: Record<Locale, Record<string, MessageValue>> = {
     "terminal.title": "Terminal SSH",
     "audit.title": "Log de auditoria",
     "users.title": "Usuários",
-    "templates.title": "Templates",
     "login.title": "Entrar na operação",
     "login.description": "Acesse a control surface da Huawei MA5800-X2 com o seu usuário operacional.",
     "login.user": "Usuário",
     "login.password": "Senha",
     "login.submit": "Entrar",
     "login.loading": "Entrando...",
-    "login.hero.tag": "Acesso Seguro",
-    "login.hero.description": "Painel operacional centralizado para terminais de rede óptica. Autofind, provisionamento assistido e telemetria em tempo real.",
-    "login.feature1.label": "Autofind",
-    "login.feature1.value": "Reconhecimento PON",
-    "login.feature2.label": "Provisionamento",
-    "login.feature2.value": "Via Templates",
-    "login.feature3.label": "Dashboard",
-    "login.feature3.value": "Visão em cache",
   },
   en: {
     "skip.content": "Skip to content",
     "app.title": "OLT Manager",
-    "app.subtitle": "Huawei MA5800-X2 · Operations",
+    "app.subtitle": "Huawei MA5800-X2 operations",
     "search.placeholder": "Search ONT, serial, PON or alarms...",
     "session.label": "Session",
     "sidebar.collapse": "Collapse sidebar",
@@ -78,7 +73,6 @@ const messages: Record<Locale, Record<string, MessageValue>> = {
     "nav.terminal": "Terminal",
     "nav.audit": "Audit Log",
     "nav.users": "Users",
-    "nav.templates": "Templates",
     "group.operations": "Operations",
     "group.management": "Management",
     "group.admin": "Administration",
@@ -93,31 +87,30 @@ const messages: Record<Locale, Record<string, MessageValue>> = {
     "terminal.title": "SSH Terminal",
     "audit.title": "Audit log",
     "users.title": "Users",
-    "templates.title": "Templates",
     "login.title": "Access operations",
     "login.description": "Access the Huawei MA5800-X2 control surface with your operational account.",
     "login.user": "Username",
     "login.password": "Password",
     "login.submit": "Sign in",
     "login.loading": "Signing in...",
-    "login.hero.tag": "Secure Access",
-    "login.hero.description": "Centralized operational panel for optical network terminals. Autofind, assisted provisioning, and real-time telemetry.",
-    "login.feature1.label": "Autofind",
-    "login.feature1.value": "PON-aware",
-    "login.feature2.label": "Provisioning",
-    "login.feature2.value": "Template-first",
-    "login.feature3.label": "Dashboard",
-    "login.feature3.value": "Cached view",
   },
 };
 
 export function UISettingsProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<ThemeMode>("light");
   const [locale, setLocaleState] = useState<Locale>("pt");
 
   useEffect(() => {
+    const savedTheme = window.localStorage.getItem(THEME_KEY) as ThemeMode | null;
     const savedLocale = window.localStorage.getItem(LOCALE_KEY) as Locale | null;
+    if (savedTheme === "light" || savedTheme === "dark") setThemeState(savedTheme);
     if (savedLocale === "pt" || savedLocale === "en") setLocaleState(savedLocale);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     window.localStorage.setItem(LOCALE_KEY, locale);
@@ -125,14 +118,17 @@ export function UISettingsProvider({ children }: { children: React.ReactNode }) 
   }, [locale]);
 
   const value = useMemo<UISettingsContextValue>(() => ({
+    theme,
     locale,
+    setTheme: setThemeState,
+    toggleTheme: () => setThemeState((current) => (current === "light" ? "dark" : "light")),
     setLocale: setLocaleState,
     t: (key, params) => {
       const entry = messages[locale][key] ?? messages.pt[key] ?? key;
       if (typeof entry === "function") return entry(params);
       return entry;
     },
-  }), [locale]);
+  }), [locale, theme]);
 
   return <UISettingsContext.Provider value={value}>{children}</UISettingsContext.Provider>;
 }
