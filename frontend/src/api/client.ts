@@ -40,6 +40,10 @@ export const getOltVersion = () => api.get("/olt/version");
 export const getBoards = () => api.get("/olt/boards");
 export const getAlarms = () => api.get("/olt/alarms");
 export const getAutofind = () => api.get("/olt/autofind");
+export const getProvisionTemplate = (port: number, slot = 1) =>
+  api.get("/olt/provision-template", { params: { port, slot } });
+export const getProvisionTemplates = (slot = 1) =>
+  api.get("/olt/provision-templates", { params: { slot } });
 export const getOnts = (slot?: number, port?: number) => {
   const params: Record<string, number> = {};
   if (slot !== undefined) params.slot = slot;
@@ -59,6 +63,14 @@ export const getOntWan = (slot: number, port: number, ontId: number) =>
   api.get(`/olt/onts/${slot}/${port}/${ontId}/wan`);
 export const getOntOptical = (slot: number, port: number, ontId: number) =>
   api.get(`/olt/onts/${slot}/${port}/${ontId}/optical`);
+export const getTemplateCatalog = () => api.get("/olt/template-catalog");
+export const createTemplateCatalogItem = (data: object) => api.post("/olt/template-catalog", data);
+export const updateTemplateCatalogItem = (id: number, data: object) => api.put(`/olt/template-catalog/${id}`, data);
+export const deleteTemplateCatalogItem = (id: number) => api.delete(`/olt/template-catalog/${id}`);
+export const getTemplateBindings = () => api.get("/olt/template-bindings");
+export const createTemplateBinding = (data: object) => api.post("/olt/template-bindings", data);
+export const updateTemplateBinding = (id: number, data: object) => api.put(`/olt/template-bindings/${id}`, data);
+export const deleteTemplateBinding = (id: number) => api.delete(`/olt/template-bindings/${id}`);
 
 // ── Audit ─────────────────────────────────────────────────────────────────────
 export const getAuditLogs = (params?: object) => api.get("/audit/logs", { params });

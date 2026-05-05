@@ -1,265 +1,79 @@
-# DESIGN.md
+# Design System: OLT Huawei Manager
+**Project ID:** Local product system
 
-## Product Intent
+## 1. Visual Theme & Atmosphere
+OLT Huawei Manager should feel like a precision operations console for fiber infrastructure, not a marketing dashboard and not a generic admin template. The atmosphere is calm, engineered, and observational. The interface should read as if it was authored for a technical team that needs confidence, speed, and low cognitive friction.
 
-OLT Huawei Manager is an operations console, not a startup landing page.
-It should feel like a serious network control surface:
-
-- calm
-- precise
-- technical
-- confident
-- fast to scan
-
-The UI should avoid looking like generic AI-generated dashboards.
-It should feel authored.
-
-## Primary Inspiration
-
-Inspired by the DESIGN.md collection from:
-
-- https://github.com/voltagent/awesome-design-md
-
-Especially the visual language described for VoltAgent:
-
-- void-dark surfaces
-- emerald accent
-- terminal-native tone
-- developer-tool clarity
-
-This project should not become a clone of VoltAgent.
-Use that direction as a design grammar, then adapt it to fiber/Olt operations.
-
-## Design Personality
-
-Think:
-
-- network operations room
-- engineered, not playful
-- modern utility software
-- minimal, but not sterile
-
-Avoid:
-
-- default blue SaaS dashboard look
-- emoji-heavy navigation
-- generic gradient-on-white startup visuals
-- purple neon AI cliché
-- oversized marketing copy inside app screens
-
-## Color System
-
-Core palette:
-
-- background: warm technical mist, not flat white
-- shell/sidebar: near-black green
-- primary accent: emerald
-- support neutrals: soft graphite and muted stone
-- danger: restrained red
-- success: dark mint, not bright green
-- warning: warm amber
-
-Use accent color sparingly.
-Accent is for:
-
-- active nav
-- primary actions
-- selected states
-- operational emphasis
-
-Do not turn every element green.
-
-## Typography
-
-Primary font:
-
-- geometric grotesk or technical sans
-
-Monospace:
-
-- reserved for serials
-- ports
-- command outputs
-- metrics
-
-Typography should create hierarchy through:
-
-- scale
-- spacing
-- casing
-- weight
-
-Not through random color shifts.
-
-Prefer:
-
-- compact uppercase micro-labels
-- strong section titles
-- muted supporting text
-
-## Layout Principles
-
-The app should feel like a control surface with a strong frame:
-
-- sculpted sidebar
-- spacious content canvas
-- soft layered backgrounds
-- clear panels
-
-Use:
-
-- rounded large containers
-- translucent surfaces where appropriate
-- subtle borders
-- strong spacing rhythm
-
-Avoid:
-
-- cramped cards
-- default table styling
-- too many equal-weight boxes
-
-## Component Language
-
-### Sidebar
-
-Should feel premium and operational:
-
-- dark shell
-- compact labels
-- consistent icon treatment
-- active state with depth
-
-No emoji icons.
-
-### Cards
-
-Cards should feel like instrument panels:
-
-- soft elevation
-- subtle border
-- clear value emphasis
-- restrained supporting metadata
-
-### Tables
-
-Tables are a core product surface.
-They must be:
-
-- highly legible
-- compact but breathable
-- easy to scan row by row
-
-Use:
-
-- strong headers
-- clear zebra or hover behavior
-- monospace where data is structural
-- action controls that don’t visually scream
-
-### Forms
-
-Forms should feel deliberate and operator-friendly:
-
-- strong grouping
-- descriptive helper text
-- prominent current context
-- minimal friction
-
-For provisioning flows, highlight:
-
-- PON
-- VLAN
-- service profile
-- line profile
-- GEM
-
-as operational facts, not generic form fields.
-
-## Motion
-
-Motion should be sparse and useful.
-
-Use only:
-
-- soft fade/slide on page entry
-- subtle panel hover transitions
-- loading shimmer or pulse when operationally useful
-
-Avoid:
-
-- flashy dashboard animations
-- bouncing counters
-- decorative motion loops
-
-## Content Style
-
-Language should be:
-
-- direct
-- operational
+The visual mood should be:
 - clear
-- low-drama
+- technical
+- grounded
+- light, but not playful
+- premium through restraint
 
-Examples:
+This is a bright control surface, not a dark NOC fantasy and not a startup SaaS clone. White space is allowed, but it must be structured. Surfaces should feel mineral, cool, and slightly softened rather than stark or glossy.
 
-- “ONT provisionada”
-- “Template aplicado para PON 0/1/7”
-- “OLT temporariamente indisponível”
+## 2. Color Palette & Roles
+- **Mineral Mist (#F4F7F8)**: Used for the app background and large layout atmosphere. This is the canvas tone and should replace flat white.
+- **Cloud Surface (#FFFFFF)**: Used for primary cards, tables, forms, and high-readability panels.
+- **Cold Porcelain (#F8FBFC)**: Used for secondary surfaces, grouped subpanels, and empty states.
+- **Steel Outline (#D9E2E8)**: Used for borders, separators, table divisions, and quiet structure lines.
+- **Graphite Ink (#1F2E3D)**: Used for primary text, headings, and dense operational information.
+- **Slate Copy (#607080)**: Used for secondary text, helper copy, and explanatory metadata.
+- **Sea Glass Accent (#2E8B6D)**: Used for active navigation, positive status, and operational match states. This should be present but never dominant.
+- **Powder Mint (#EAF7F1)**: Used as the soft surface under Sea Glass Accent elements.
+- **Mineral Blue Action (#8EAFF1)**: Used for primary actions and forward-progress controls such as “Salvar”, “Provisionar” and “Atualizar”.
+- **Deep Action Ink (#27456F)**: Used as text on blue action buttons and for supporting action emphasis.
+- **Warm Amber Signal (#E7B554)**: Used for warning, degraded state, and attention markers.
+- **Soft Coral Alert (#E57E73)**: Used for destructive actions, failure, or risk messaging.
 
-Avoid fluffy product copy.
+Color usage rules:
+- Green is for state and confirmation, not for every button.
+- Blue is for action and momentum, not for status.
+- Red appears only on destructive or error flows.
+- Dark fills should be avoided in the main shell except where raw terminal output genuinely needs it.
 
-## Page-Specific Guidance
+## 3. Typography Rules
+Primary UI type should be a civic, highly legible sans with a technical tone rather than a trendy startup face. It should feel authoritative and invisible at the same time.
 
-### Login
+Recommended pairing:
+- **Primary Sans:** Public Sans
+- **Monospace:** IBM Plex Mono
 
-Should feel like access to an operations system.
-Less marketing, more control and trust.
+Typography behavior:
+- Section titles should be strong, compact, and calm.
+- Supporting copy should use softer gray, never low-contrast pastel.
+- Micro-labels should use uppercase sparingly with deliberate spacing.
+- Metrics, ports, VLANs, serials, and command outputs should use monospace for structural clarity.
 
-### Dashboard
+Avoid:
+- overly geometric “AI dashboard” type
+- exaggerated tracking everywhere
+- over-styled hero typography inside the app shell
 
-Should prioritize:
+## 4. Component Stylings
+* **Buttons:** Generously rounded, compact, and structured. Primary buttons use Mineral Blue Action with dark text. Secondary buttons remain white with steel outlines. Destructive actions use pale coral surfaces with restrained red text.
+* **Cards/Containers:** Large rounded containers with cool white surfaces, thin steel outlines, and whisper-soft shadows. Cards should feel precise and layered, never puffy or glassy.
+* **Inputs/Forms:** Bright white fields with subtle borders, soft blue focus rings, and consistent spacing. Inputs should feel deliberate and operator-friendly rather than decorative.
+* **Status Pills:** Lightly tinted pills with thin outlines. They should read like annotations, not badges shouting for attention.
+* **Tables:** Clean white rows, crisp headers, restrained hover states, and monospace only where the data is structural.
 
-- current OLT health
-- ONTs online/offline
-- alarms
-- autofind queue
+## 5. Layout Principles
+The interface should have a strong frame:
+- a stable left rail
+- a calm header
+- a spacious content field
+- clearly nested panels
 
-The first screen must read like an operational summary, not a KPI gallery.
+Spacing should prioritize rhythm over density:
+- strong outer page margins
+- softer internal card padding
+- visible grouping between overview, actions, and detail
 
-### Autofind
+The layout should not chase visual spectacle. It should support fast scanning:
+- first read: where am I
+- second read: what matters now
+- third read: what can I do next
 
-Should feel actionable.
-Each row must make it obvious:
-
-- where the ONT was found
-- what template will be used
-- what happens next
-
-### Provision
-
-Should look like a guided operational workflow.
-Context and template data should feel embedded into the UI, not hidden in plain inputs.
-
-### ONTs
-
-Should feel like an inventory console:
-
-- dense but readable
-- excellent scanability
-- clear operational status
-
-## Implementation Notes
-
-When redesigning:
-
-- prefer improving shared primitives first
-- keep pages visually consistent
-- avoid introducing random styles per page
-- preserve responsiveness
-- preserve readability on smaller screens
-
-## Rule of Thumb
-
-If a screen looks like a generic admin template, it is wrong.
-If it looks like a serious fiber/network operations console with a modern crafted finish, it is right.
+If a screen feels like a dashboard collage, it is wrong.
+If a screen feels like an operational briefing surface, it is right.

@@ -12,6 +12,7 @@ const PROMPT_RE = /(?:^|\r?\n)[^\r\n]*[>#]\s*$/;
 const PROMPT_PRIV = /(?:^|\r?\n)[^\r\n]*#\s*$/;
 const CONTINUE_RE = /(?:\{[^{}\r\n]*<cr>[^{}\r\n]*\}:|---- More[\s\S]*|More \( Press 'Q' to break \)|Configuration console time out, please retry to log on)\s*$/i;
 const PASSWORD_RE = /password\s*:?$/i;
+const LOGOUT_CONFIRM_RE = /are you sure to log out\?\s*\(y\/n\)\[n\]:\s*$/i;
 
 // ── Mutex simples ─────────────────────────────────────────────────────────────
 class Mutex {
@@ -76,12 +77,18 @@ class OLTSession {
 
     while (true) {
       const remaining = Math.max(1, deadline - Date.now());
-      const chunk = await this.waitForAny([PROMPT_RE, CONTINUE_RE], remaining);
+      const chunk = await this.waitForAny([PROMPT_RE, CONTINUE_RE, LOGOUT_CONFIRM_RE], remaining);
       raw += chunk;
 
       if (CONTINUE_RE.test(chunk)) {
         this.#buffer = '';
         this.#stream.write('\n');
+        continue;
+      }
+
+      if (LOGOUT_CONFIRM_RE.test(chunk)) {
+        this.#buffer = '';
+        this.#stream.write('n\n');
         continue;
       }
 
@@ -181,29 +188,7 @@ async function openSession() {
         });
 
         try {
-          // Aguarda prompt inicial e usa o output para detectar o modo
-          const initialPrompt = await sess.waitFor(PROMPT_RE, 15_000);
-
-          // Nesta OLT, os comandos relevantes ficam disponiveis apos "enable".
-          if (!PROMPT_PRIV.test(initialPrompt)) {
-            sess.write('enable\n');
-            const afterEnable = await sess.waitFor(PROMPT_RE, 10_000);
-            if (PASSWORD_RE.test(sanitizeOutput(afterEnable).trim())) {
-              if (!config.OLT_ENABLE_PASSWORD) {
-                throw Object.assign(
-                  new Error('A OLT solicitou senha para o comando enable. Configure OLT_ENABLE_PASSWORD no .env.'),
-                  { statusCode: 503 }
-                );
-              }
-              sess.write(config.OLT_ENABLE_PASSWORD + '\n');
-              await sess.waitFor(PROMPT_PRIV, 10_000);
-            } else if (!PROMPT_PRIV.test(afterEnable)) {
-              await sess.waitFor(PROMPT_PRIV, 10_000);
-            }
-          }
-
-          // Desabilita paginação
-          await sess.sendLine('screen-length 0 temporary', 10_000);
+          await initializeShellSession(sess);
 
           resolve(sess);
         } catch (e) {
@@ -304,10 +289,18 @@ export function openShellForTerminal() {
   return new Promise((resolve, reject) => {
     const client = new Client();
     client.on('ready', () => {
-      client.shell({ term: 'vt100', cols: 220, rows: 50 }, (err, stream) => {
+      client.shell({ term: 'vt100', cols: 220, rows: 50 }, async (err, stream) => {
         if (err) return reject(err);
-        stream.on('close', () => client.end());
-        resolve({ stream, client });
+        try {
+          const sess = new OLTSession(stream);
+          await initializeShellSession(sess);
+          stream.on('close', () => client.end());
+          resolve({ stream, client });
+        } catch (error) {
+          stream.end();
+          client.end();
+          reject(error);
+        }
       });
     });
     client.on('error', reject);
@@ -316,6 +309,46 @@ export function openShellForTerminal() {
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+async function initializeShellSession(sess) {
+  await ensurePrivilegedPrompt(sess);
+  await sess.sendLine('screen-length 0 temporary', 10_000);
+  await runBootstrapCommands(sess);
+}
+
+async function ensurePrivilegedPrompt(sess) {
+  const initialPrompt = await sess.waitFor(PROMPT_RE, 15_000);
+
+  if (PROMPT_PRIV.test(initialPrompt)) return;
+
+  sess.write('enable\n');
+  const afterEnable = await sess.waitFor(PROMPT_RE, 10_000);
+  if (PASSWORD_RE.test(sanitizeOutput(afterEnable).trim())) {
+    if (!config.OLT_ENABLE_PASSWORD) {
+      throw Object.assign(
+        new Error('A OLT solicitou senha para o comando enable. Configure OLT_ENABLE_PASSWORD no .env.'),
+        { statusCode: 503 }
+      );
+    }
+    sess.write(config.OLT_ENABLE_PASSWORD + '\n');
+    await sess.waitFor(PROMPT_PRIV, 10_000);
+    return;
+  }
+
+  if (!PROMPT_PRIV.test(afterEnable)) {
+    await sess.waitFor(PROMPT_PRIV, 10_000);
+  }
+}
+
+async function runBootstrapCommands(sess) {
+  for (const command of config.OLT_SESSION_BOOTSTRAP_COMMANDS) {
+    try {
+      await sess.sendLine(command, 10_000);
+    } catch (error) {
+      console.warn(`[OLT bootstrap] falha ao executar "${command}": ${error.message}`);
+    }
+  }
+}
+
 function cleanOutput(raw, cmd) {
   const normalized = sanitizeOutput(raw);
   return normalized

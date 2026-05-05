@@ -74,10 +74,8 @@ export function Dashboard() {
       <header className="panel overflow-hidden px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-              OLT Summary
-            </div>
-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Estado operacional da MA5800-X2</h2>
+            <div className="eyebrow mb-3">OLT Summary</div>
+            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-[3.25rem]">Estado operacional da MA5800-X2</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
               Visao consolidada da OLT, com inventario de ONTs, alarmes ativos e fila de provisionamento descoberta automaticamente.
             </p>
@@ -241,27 +239,40 @@ function StatCard({ label, value, total, tone, link, note }: {
   note?: string;
 }) {
   const tones = {
-    emerald: "from-brand-950 via-brand-900 to-brand-800 text-white",
-    mint: "from-brand-100 via-brand-50 to-white text-ink-900",
-    amber: "from-amber-50 via-white to-white text-ink-900",
-    slate: "from-ink-900 via-ink-800 to-ink-700 text-white",
+    emerald: {
+      panel: "border-emerald-200 bg-[rgba(241,250,246,0.96)]",
+      line: "bg-emerald-400/70",
+    },
+    mint: {
+      panel: "border-brand-200 bg-[rgba(245,248,252,0.96)]",
+      line: "bg-brand-400/60",
+    },
+    amber: {
+      panel: "border-amber-200 bg-[rgba(253,249,240,0.96)]",
+      line: "bg-amber-400/70",
+    },
+    slate: {
+      panel: "border-ink-200 bg-[rgba(252,253,255,0.96)]",
+      line: "bg-ink-300/85",
+    },
   } as const;
 
   const content = (
-    <div className={`panel overflow-hidden bg-gradient-to-br ${tones[tone]} px-5 py-5`}>
+    <div className={`relative overflow-hidden rounded-[1.25rem] border px-5 py-5 shadow-panel ${tones[tone].panel}`}>
+      <div className={`absolute inset-x-0 top-0 h-1 ${tones[tone].line}`} />
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className={`text-[11px] uppercase tracking-[0.2em] ${tone === "emerald" || tone === "slate" ? "text-white/55" : "text-ink-400"}`}>{label}</div>
-          <div className="mt-4 text-4xl font-bold leading-none">
+          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{label}</div>
+          <div className="mt-4 text-4xl font-semibold leading-none text-ink-900">
             {value}
-            {total !== undefined && <span className={`ml-2 text-lg ${tone === "emerald" || tone === "slate" ? "text-white/45" : "text-ink-400"}`}>/ {total}</span>}
+            {total !== undefined && <span className="ml-2 text-lg text-ink-400">/ {total}</span>}
           </div>
         </div>
-        <div className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${tone === "emerald" || tone === "slate" ? "bg-white/10 text-white/70" : "bg-ink-900/5 text-ink-500"}`}>
+        <div className="font-mono rounded-full border border-white/80 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-ink-500">
           Live
         </div>
       </div>
-      {note && <div className={`mt-5 text-sm ${tone === "emerald" || tone === "slate" ? "text-white/70" : "text-ink-500"}`}>{note}</div>}
+      {note && <div className="mt-5 text-sm text-ink-500">{note}</div>}
     </div>
   );
 
@@ -273,11 +284,11 @@ function Section({ title, subtitle, children, link }: { title: string; subtitle?
     <section className="panel px-6 py-5 md:px-7">
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-ink-900">{title}</h3>
+          <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-ink-900">{title}</h3>
           {subtitle && <p className="mt-1 text-sm leading-6 text-ink-500">{subtitle}</p>}
         </div>
         {link && (
-          <Link to={link} className="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white">
+          <Link to={link} className="font-mono rounded-full border border-ink-200 bg-white/80 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white">
             Ver tudo
           </Link>
         )}

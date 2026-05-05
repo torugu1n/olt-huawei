@@ -30,8 +30,14 @@ export interface AutofindONT {
   vendor_id: string;
   equipment_id: string;
   found_at: string;
+  template_id?: number | null;
+  template_name?: string | null;
   template_vlan_id?: number | null;
   template_auto_matched?: boolean;
+  template_lineprofile_id?: number | null;
+  template_srvprofile_id?: number | null;
+  template_user_vlan?: number | null;
+  template_gemport?: number | null;
 }
 
 export interface ONT {
@@ -141,4 +147,50 @@ export interface DashboardSummary {
   autofind: AutofindONT[];
   onts_total: number;
   onts_online: number;
+}
+
+export interface ProvisionTemplate {
+  port: number;
+  slot: number;
+  template_id: number | null;
+  template_name: string | null;
+  lineprofile_id: number | null;
+  srvprofile_id: number | null;
+  gemport: number;
+  vlan_id: number | null;
+  user_vlan: number | null;
+  auto_matched: boolean;
+  source: string;
+  description?: string;
+  lineprofile_mode?: "fixed" | "same_as_vlan";
+  srvprofile_mode?: "fixed" | "same_as_vlan";
+  user_vlan_mode?: "fixed" | "same_as_vlan";
+}
+
+export interface TemplateCatalogItem {
+  id: number;
+  name: string;
+  description: string;
+  lineprofile_mode: "fixed" | "same_as_vlan";
+  lineprofile_id: number | null;
+  srvprofile_mode: "fixed" | "same_as_vlan";
+  srvprofile_id: number | null;
+  gemport: number;
+  vlan_id: number | null;
+  user_vlan_mode: "fixed" | "same_as_vlan";
+  user_vlan: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateBinding {
+  id: number;
+  slot: number;
+  pon_start: number;
+  pon_end: number;
+  template_id: number;
+  template_name: string;
+  template_description: string;
+  created_at: string;
+  updated_at: string;
 }

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getAutofind, provisionOnt } from "../api/client";
-import { AutofindONT } from "../types";
-import { getProvisionTemplate } from "../lib/provisionTemplates";
+import { getAutofind, getProvisionTemplate, provisionOnt } from "../api/client";
+import { AutofindONT, ProvisionTemplate } from "../types";
 
 export function Autofind() {
   const [onts, setOnts] = useState<AutofindONT[]>([]);
@@ -21,14 +20,21 @@ export function Autofind() {
     setSuccess("");
     try {
       const { data } = await getAutofind();
-      const enriched = (data.onts ?? []).map((ont: AutofindONT) => {
-        const template = getProvisionTemplate(ont.port);
+      const enriched = await Promise.all((data.onts ?? []).map(async (ont: AutofindONT) => {
+        const response = await getProvisionTemplate(ont.port, ont.slot);
+        const template = response.data as ProvisionTemplate;
         return {
           ...ont,
+          template_id: template.template_id,
+          template_name: template.template_name,
           template_vlan_id: template.vlan_id,
           template_auto_matched: template.auto_matched,
+          template_lineprofile_id: template.lineprofile_id,
+          template_srvprofile_id: template.srvprofile_id,
+          template_user_vlan: template.user_vlan,
+          template_gemport: template.gemport,
         };
-      });
+      }));
       setOnts(enriched);
       setRaw(data.raw ?? "");
     } catch (e: any) {
@@ -54,8 +60,14 @@ export function Autofind() {
   };
 
   const handleDirectProvision = async (ont: AutofindONT) => {
-    const template = getProvisionTemplate(ont.port);
-    if (!template.auto_matched || template.vlan_id == null || template.user_vlan == null) {
+    if (
+      !ont.template_auto_matched ||
+      ont.template_vlan_id == null ||
+      ont.template_user_vlan == null ||
+      ont.template_lineprofile_id == null ||
+      ont.template_srvprofile_id == null ||
+      ont.template_gemport == null
+    ) {
       setError(`Nao existe template automatico salvo para a PON 0/1/${ont.port}.`);
       return;
     }
@@ -75,14 +87,14 @@ export function Autofind() {
         slot: 1,
         port: ont.port,
         sn: ont.sn,
-        lineprofile_id: template.lineprofile_id,
-        srvprofile_id: template.srvprofile_id,
+        lineprofile_id: ont.template_lineprofile_id,
+        srvprofile_id: ont.template_srvprofile_id,
         description: finalDescription,
-        vlan_id: template.vlan_id,
-        user_vlan: template.user_vlan,
-        gemport: template.gemport,
+        vlan_id: ont.template_vlan_id,
+        user_vlan: ont.template_user_vlan,
+        gemport: ont.template_gemport,
       });
-      setSuccess(`ONT ${ont.sn} provisionada na PON 0/1/${ont.port} com VLAN ${template.vlan_id}.`);
+      setSuccess(`ONT ${ont.sn} provisionada na PON 0/1/${ont.port} com VLAN ${ont.template_vlan_id}.`);
       setEditingSn(null);
       setDescription("");
       await load();
@@ -100,10 +112,8 @@ export function Autofind() {
       <header className="panel px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-              Discovery queue
-            </div>
-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Autofind</h2>
+            <div className="eyebrow mb-3">Discovery queue</div>
+            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Autofind</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
               ONTs detectadas pela OLT e prontas para seguir o fluxo de provisao com template automatico por PON.
             </p>
@@ -135,7 +145,7 @@ export function Autofind() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[76rem] text-sm">
               <thead className="border-b border-ink-100 bg-white/65">
-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
+                <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
                   <th className="px-5 py-4">PON</th>
                   <th className="px-5 py-4">Serial</th>
                   <th className="px-5 py-4">Vendor</th>
@@ -154,11 +164,11 @@ export function Autofind() {
                       <td className="px-5 py-4 text-ink-600">{ont.vendor_id}</td>
                       <td className="px-5 py-4">
                         {ont.template_auto_matched ? (
-                          <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-700">
-                            VLAN {ont.template_vlan_id}
+                          <span className="font-mono inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-brand-700">
+                            {ont.template_name ? ont.template_name : `VLAN ${ont.template_vlan_id}`}
                           </span>
                         ) : (
-                          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800">
+                          <span className="font-mono inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-amber-800">
                             Sem template
                           </span>
                         )}
@@ -170,13 +180,13 @@ export function Autofind() {
                           <button
                             onClick={() => startDirectProvision(ont)}
                             disabled={!ont.template_auto_matched || actionSn === ont.sn}
-                            className="rounded-full border border-brand-200 bg-brand-600 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white transition hover:bg-brand-700 disabled:border-brand-100 disabled:bg-brand-300"
+                            className="font-mono rounded-full border border-brand-200 bg-brand-600 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-white transition hover:bg-brand-700 disabled:border-brand-100 disabled:bg-brand-300"
                           >
                             Provisionar direto
                           </button>
                           <Link
                             to={`/provision?sn=${ont.sn}&port=${ont.port}`}
-                            className="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white"
+                            className="font-mono rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white"
                           >
                             Editar
                           </Link>
@@ -189,7 +199,7 @@ export function Autofind() {
                         <td colSpan={7} className="px-5 py-5">
                           <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                             <div>
-                              <div className="mb-2 text-[11px] uppercase tracking-[0.2em] text-ink-400">Descricao obrigatoria</div>
+                              <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">Descricao obrigatoria</div>
                               <label className="mb-1 block text-sm font-medium text-ink-700">Nome operacional da ONT</label>
                               <input
                                 type="text"

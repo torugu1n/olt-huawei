@@ -1,8 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { provisionOnt } from "../api/client";
-import { ProvisionForm } from "../types";
-import { getProvisionTemplate } from "../lib/provisionTemplates";
+import { getProvisionTemplate, provisionOnt } from "../api/client";
+import { ProvisionForm, ProvisionTemplate } from "../types";
 
 const DEFAULT: ProvisionForm = {
   slot: 1, port: 0, sn: "", lineprofile_id: 20, srvprofile_id: 20,
@@ -22,6 +21,7 @@ export function Provision() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ ont_id: number; raw: Record<string, string> } | null>(null);
   const [templateHint, setTemplateHint] = useState<string>("");
+  const [resolvedTemplate, setResolvedTemplate] = useState<ProvisionTemplate | null>(null);
 
   const set = (field: keyof ProvisionForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.type === "number" ? Number(e.target.value) : e.target.value;
@@ -29,22 +29,32 @@ export function Provision() {
   };
 
   useEffect(() => {
-    const template = getProvisionTemplate(form.port);
-    setForm((current) => {
-      const next = { ...current };
-      next.slot = 1;
-      next.lineprofile_id = template.lineprofile_id;
-      next.srvprofile_id = template.srvprofile_id;
-      next.gemport = template.gemport;
-      if (template.vlan_id != null) next.vlan_id = template.vlan_id;
-      if (template.user_vlan != null) next.user_vlan = template.user_vlan;
-      return next;
-    });
-    setTemplateHint(
-      template.auto_matched
-        ? `Template aplicado para PON 0/1/${form.port}: VLAN ${template.vlan_id}, line profile ${template.lineprofile_id}, service profile ${template.srvprofile_id}, GEM ${template.gemport}.`
-        : `Sem template salvo para a PON 0/1/${form.port}. Ajuste VLAN e perfis antes de enviar.`
-    );
+    const loadTemplate = async () => {
+      try {
+        const { data } = await getProvisionTemplate(form.port, 1);
+        const template = data as ProvisionTemplate;
+        setResolvedTemplate(template);
+        setForm((current) => ({
+          ...current,
+          slot: 1,
+          lineprofile_id: template.lineprofile_id ?? current.lineprofile_id,
+          srvprofile_id: template.srvprofile_id ?? current.srvprofile_id,
+          gemport: template.gemport ?? current.gemport,
+          vlan_id: template.vlan_id ?? current.vlan_id,
+          user_vlan: template.user_vlan ?? current.user_vlan,
+        }));
+        setTemplateHint(
+          template.auto_matched
+            ? `Template aplicado para PON 0/1/${form.port}: VLAN ${template.vlan_id}, line profile ${template.lineprofile_id}, service profile ${template.srvprofile_id}, GEM ${template.gemport}.`
+            : `Sem template salvo para a PON 0/1/${form.port}. Ajuste VLAN e perfis antes de enviar.`
+        );
+      } catch {
+        setResolvedTemplate(null);
+        setTemplateHint(`Não foi possível carregar o template da PON 0/1/${form.port}.`);
+      }
+    };
+
+    loadTemplate();
   }, [form.port]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -67,12 +77,10 @@ export function Provision() {
     return (
       <div className="mx-auto max-w-4xl space-y-5">
         <div className="panel overflow-hidden px-6 py-6 md:px-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-                Provision completed
-              </div>
-              <h2 className="text-3xl font-bold text-ink-900">ONT provisionada com sucesso</h2>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+              <div className="eyebrow mb-3">Provision completed</div>
+              <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900">ONT provisionada com sucesso</h2>
               <p className="mt-2 text-sm text-ink-500">
                 ONT ID {result.ont_id} atribuida para SN <span className="font-mono text-ink-800">{form.sn}</span> na PON 0/{form.slot}/{form.port}.
               </p>
@@ -109,17 +117,15 @@ export function Provision() {
       <header className="panel px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-              Provision workflow
-            </div>
-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Provisionar ONT</h2>
+            <div className="eyebrow mb-3">Provision workflow</div>
+            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Provisionar ONT</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
               Fluxo operacional para registrar a ONT, aplicar native VLAN e criar o service-port com base no template da PON.
             </p>
           </div>
 
           <div className="panel-muted min-w-[19rem] px-4 py-4">
-            <div className="text-[11px] uppercase tracking-[0.2em] text-ink-400">Contexto ativo</div>
+            <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">Contexto ativo</div>
             <div className="mt-2 text-sm font-medium text-ink-900">PON 0/1/{form.port}</div>
             <div className="mt-1 font-mono text-xs text-ink-500">{form.sn || "SN aguardando entrada"}</div>
           </div>
@@ -187,6 +193,11 @@ export function Provision() {
 
         <div className="space-y-6">
           <FormPanel title="Template aplicado" subtitle="Esses valores sao herdados da PON, mas ainda podem ser ajustados antes do envio.">
+            {resolvedTemplate?.template_name && (
+              <div className="rounded-[1.25rem] border border-brand-200 bg-brand-50/60 px-4 py-3 text-sm text-brand-800">
+                Template ativo: <span className="font-semibold">{resolvedTemplate.template_name}</span>
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricField label="Line profile" value={form.lineprofile_id} />
               <MetricField label="Service profile" value={form.srvprofile_id} />
@@ -229,7 +240,7 @@ function FormPanel({ title, subtitle, children }: { title: string; subtitle?: st
   return (
     <section className="panel px-6 py-5">
       <div className="mb-5">
-        <h3 className="text-lg font-bold text-ink-900">{title}</h3>
+        <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-ink-900">{title}</h3>
         {subtitle && <p className="mt-1 text-sm leading-6 text-ink-500">{subtitle}</p>}
       </div>
       <div className="space-y-4">{children}</div>

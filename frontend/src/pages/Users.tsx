@@ -55,10 +55,8 @@ export function Users() {
       <header className="panel px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-              Access control
-            </div>
-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Usuarios</h2>
+            <div className="eyebrow mb-3">Access control</div>
+            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Usuarios</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
               Gestao de acesso da ferramenta, com operacoes administrativas centralizadas e estados de conta bem visiveis.
             </p>
@@ -82,7 +80,7 @@ export function Users() {
           <Field label="Senha">
             <input type="password" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
           </Field>
-          <div className="flex items-center gap-3 rounded-[1.25rem] border border-ink-100 bg-white/55 px-4 py-4">
+          <div className="flex items-center gap-3 rounded-[1rem] border border-ink-200 bg-[rgba(248,250,252,0.95)] px-4 py-4">
             <input
               type="checkbox"
               id="is_admin"
@@ -106,7 +104,7 @@ export function Users() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[60rem] text-sm">
               <thead className="border-b border-ink-100 bg-white/65">
-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
+                <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
                   <th className="px-5 py-4">Usuario</th>
                   <th className="px-5 py-4">Nome</th>
                   <th className="px-5 py-4">Perfil</th>

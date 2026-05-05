@@ -1,27 +1,49 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { AuthToken } from "../types";
+import { useUISettings } from "../context/UISettingsContext";
 
 interface Props {
   user: AuthToken;
   onLogout: () => void;
   open: boolean;
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-const links = [
-  { to: "/", label: "Dashboard", icon: "DB" },
-  { to: "/autofind", label: "Autofind", icon: "AF" },
-  { to: "/provision", label: "Provisionar ONT", icon: "PV" },
-  { to: "/onts", label: "ONTs Registradas", icon: "ON" },
-  { to: "/alarms", label: "Alarmes", icon: "AL" },
-  { to: "/terminal", label: "Terminal", icon: "SH" },
-  { to: "/audit", label: "Auditoria", icon: "LG" },
-];
-
-const adminLinks = [{ to: "/users", label: "Usuários", icon: "AD" }];
-
-export function Sidebar({ user, onLogout, open, onClose }: Props) {
+export function Sidebar({ user, onLogout, open, onClose, collapsed, onToggleCollapse }: Props) {
   const navigate = useNavigate();
+  const { t } = useUISettings();
+
+  const primaryLinks = [
+    { to: "/", label: t("nav.dashboard"), icon: "dashboard" },
+    { to: "/alarms", label: t("nav.alarms"), icon: "warning" },
+  ];
+
+  const groups = [
+    {
+      title: t("group.operations"),
+      items: [
+        { to: "/onts", label: t("nav.onts"), icon: "lan" },
+        { to: "/autofind", label: t("nav.autofind"), icon: "travel_explore" },
+        { to: "/provision", label: t("nav.provision"), icon: "deployed_code" },
+      ],
+    },
+    {
+      title: t("group.management"),
+      items: [
+        { to: "/terminal", label: t("nav.terminal"), icon: "terminal" },
+        { to: "/audit", label: t("nav.audit"), icon: "history" },
+      ],
+    },
+    {
+      title: t("group.admin"),
+      items: [
+        { to: "/users", label: t("nav.users"), icon: "group" },
+        { to: "/templates", label: "Templates", icon: "assignment" }
+      ],
+    },
+  ];
 
   const handleLogout = () => {
     onLogout();
@@ -29,92 +51,120 @@ export function Sidebar({ user, onLogout, open, onClose }: Props) {
   };
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all ${
+    `group flex items-center rounded-xl border px-3 py-2.5 text-sm transition ${
       isActive
-        ? "bg-white/14 text-white shadow-lg shadow-black/10"
-        : "text-brand-100/80 hover:bg-white/8 hover:text-white"
-    }`;
+        ? "border-brand-200 bg-white text-brand-700 shadow-sm"
+        : "border-transparent text-ink-500 hover:border-ink-200 hover:bg-white/80 hover:text-ink-700"
+    } ${collapsed ? "justify-center gap-0" : "gap-3"}`;
+
+  const renderItem = (item: { to: string; label: string; icon: string }) => (
+    <NavLink
+      key={`${item.to}-${item.label}`}
+      to={item.to}
+      end={item.to === "/" && item.icon === "dashboard"}
+      className={linkClass}
+      onClick={onClose}
+      aria-label={item.label}
+      title={collapsed ? item.label : undefined}
+    >
+      {({ isActive }) => (
+        <>
+          <span className={`material-symbols-outlined text-[18px] ${isActive ? "text-brand-600" : "text-ink-400 group-hover:text-ink-600"}`}>
+            {item.icon}
+          </span>
+          {!collapsed && <span className={`${isActive ? "font-medium" : "font-normal"}`}>{item.label}</span>}
+        </>
+      )}
+    </NavLink>
+  );
 
   return (
     <>
       <div
-        className={`fixed inset-0 z-30 bg-ink-900/45 backdrop-blur-sm transition md:hidden ${
+        className={`fixed inset-0 z-30 bg-ink-900/25 backdrop-blur-sm transition md:hidden ${
           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
         onClick={onClose}
       />
-      <aside className={`fixed inset-y-3 left-3 z-40 flex min-h-[calc(100vh-1.5rem)] w-[18rem] flex-col overflow-hidden rounded-[2rem] border border-white/8 bg-gradient-to-b from-[#141824] via-[#1c2231] to-[#20263a] shadow-panel transition-transform duration-300 md:relative md:inset-auto md:z-auto md:m-3 md:translate-x-0 ${
-        open ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
-      }`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_28rem)]" />
-        <div className="relative border-b border-white/10 px-6 py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="inline-flex items-center rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-100/70">
-              Control Surface
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-ink-200/80 bg-[rgba(249,251,252,0.98)] backdrop-blur-xl transition-all duration-300 md:sticky md:top-0 md:z-20 md:h-dvh md:translate-x-0 ${
+          collapsed ? "w-[5.25rem]" : "w-[16rem]"
+        } ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className={`relative flex h-[4.5rem] items-center border-b border-ink-200/80 ${collapsed ? "justify-center px-2" : "px-5 pr-10"}`}>
+          <div className={`flex min-w-0 items-center ${collapsed ? "justify-center" : "gap-3"}`}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-200 bg-white text-brand-700 shadow-sm">
+              <span className="material-symbols-outlined text-[18px]">router</span>
             </div>
-            <button
-              onClick={onClose}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-brand-100/70 md:hidden"
-              aria-label="Fechar menu"
-            >
-              ×
-            </button>
+            {!collapsed && (
+              <div className="min-w-0">
+                <div className="font-display truncate text-[1.05rem] font-semibold tracking-[-0.02em] text-ink-900">{t("app.title")}</div>
+                <div className="line-clamp-2 text-[11px] leading-4 text-ink-500">{t("app.subtitle")}</div>
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl font-bold leading-tight text-white">OLT Manager</h1>
-          <p className="mt-1 text-sm text-brand-100/65">Huawei MA5800-X2 operations</p>
+
+          <button
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
+            title={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
+            className={`absolute top-1/2 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-ink-200 bg-white text-ink-400 transition hover:border-brand-200 hover:text-brand-600 md:inline-flex ${
+              collapsed ? "right-2" : "right-3"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              {collapsed ? "keyboard_double_arrow_right" : "keyboard_double_arrow_left"}
+            </span>
+          </button>
         </div>
 
-        <nav className="relative flex-1 space-y-1 px-3 py-4">
-          {links.map((l) => (
-            <NavLink key={l.to} to={l.to} end={l.to === "/"} className={linkClass} onClick={onClose}>
-              {({ isActive }) => (
-                <>
-                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[11px] font-semibold tracking-[0.18em] ${
-                    isActive
-                      ? "border-white/20 bg-white/12 text-white"
-                      : "border-white/8 bg-white/5 text-brand-100/70 group-hover:border-white/16 group-hover:text-white"
-                  }`}>
-                    {l.icon}
-                  </span>
-                  <span>{l.label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
-
-          {user.is_admin && (
-            <>
-              <div className="px-4 pb-2 pt-4 text-[11px] uppercase tracking-[0.24em] text-brand-100/45">Admin</div>
-              {adminLinks.map((l) => (
-                <NavLink key={l.to} to={l.to} className={linkClass} onClick={onClose}>
-                  {({ isActive }) => (
-                    <>
-                      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[11px] font-semibold tracking-[0.18em] ${
-                        isActive
-                          ? "border-white/20 bg-white/12 text-white"
-                          : "border-white/8 bg-white/5 text-brand-100/70 group-hover:border-white/16 group-hover:text-white"
-                      }`}>
-                        {l.icon}
-                      </span>
-                      <span>{l.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </>
-          )}
-        </nav>
-        <div className="relative border-t border-white/10 px-4 py-4">
-          <div className="panel-muted mb-3 px-4 py-3 text-sm text-brand-100/70">
-            <div className="font-medium text-white">{user.full_name}</div>
-            <div className="mt-1 text-xs uppercase tracking-[0.18em] text-brand-100/45">{user.username}{user.is_admin ? " / admin" : ""}</div>
+        <div className="flex-1 overflow-y-auto">
+          <div className={`border-b border-ink-200/80 px-3 py-3 ${collapsed ? "px-2.5" : ""}`}>
+            <div className="space-y-1.5">{primaryLinks.map(renderItem)}</div>
           </div>
+
+          {groups
+            .map((group) =>
+              group.title === t("group.admin") && !user.is_admin
+                ? { ...group, items: [] }
+                : group
+            )
+            .filter((group) => group.items.length > 0)
+            .map((group) => (
+            <div key={group.title} className={`border-b border-ink-200/70 px-3 py-4 ${collapsed ? "px-2.5" : ""}`}>
+              {!collapsed && (
+                <div className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">{group.title}</div>
+              )}
+              <div className="space-y-1.5">{group.items.map(renderItem)}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className={`mt-auto border-t border-ink-200/80 px-3 py-3 ${collapsed ? "px-2.5" : ""}`}>
+          {!collapsed && (
+            <div className="mb-3 rounded-xl border border-ink-200/80 bg-white px-3 py-3 shadow-sm">
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">Usuário ativo</div>
+              <div className="mt-2 text-sm font-semibold text-ink-800">{user.full_name || user.username}</div>
+              <div className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-400">
+                {user.is_admin ? "Admin" : "Operador"}
+              </div>
+            </div>
+          )}
           <button
             onClick={handleLogout}
-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-medium text-brand-100/80 transition hover:bg-white/10 hover:text-white"
+            aria-label={t("logout")}
+            title={collapsed ? t("logout") : undefined}
+            className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-ink-500 transition hover:bg-white hover:text-ink-700 ${
+              collapsed ? "justify-center gap-0" : "gap-3"
+            }`}
           >
-            Encerrar sessão
+            <span className="material-symbols-outlined text-[18px]">logout</span>
+            {!collapsed && t("logout")}
           </button>
+          {!collapsed && <div className="mt-3 px-1 text-[11px] text-ink-400">v0.1.0</div>}
         </div>
       </aside>
     </>

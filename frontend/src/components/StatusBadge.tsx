@@ -26,7 +26,7 @@ export function StatusBadge({ value }: Props) {
   const key = value?.toLowerCase() ?? "";
   const color = STATE_COLORS[key] ?? "border border-ink-200 bg-white/70 text-ink-600";
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em] ${color}`}>
+    <span className={`font-mono inline-flex items-center rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] ${color}`}>
       {value || "—"}
     </span>
   );

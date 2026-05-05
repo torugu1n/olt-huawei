@@ -1,0 +1,2430 @@
+diff --git a/.env.example b/.env.example
+index 888a699..4dab69a 100644
+--- a/.env.example
++++ b/.env.example
+@@ -8,6 +8,7 @@ OLT_PORT=22
+ OLT_USERNAME=admin
+ OLT_PASSWORD=senha_da_olt
+ OLT_ENABLE_PASSWORD=
++OLT_SESSION_BOOTSTRAP_COMMANDS=undo idle-timeout
+ OLT_NAME=MA5800-X2
+ OLT_TIMEOUT=30
+ 
+diff --git a/DESIGN.md b/DESIGN.md
+index 2070a99..a289801 100644
+--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -1,265 +1,79 @@
+-# DESIGN.md
++# Design System: OLT Huawei Manager
++**Project ID:** Local product system
+ 
+-## Product Intent
++## 1. Visual Theme & Atmosphere
++OLT Huawei Manager should feel like a precision operations console for fiber infrastructure, not a marketing dashboard and not a generic admin template. The atmosphere is calm, engineered, and observational. The interface should read as if it was authored for a technical team that needs confidence, speed, and low cognitive friction.
+ 
+-OLT Huawei Manager is an operations console, not a startup landing page.
+-It should feel like a serious network control surface:
+-
+-- calm
+-- precise
++The visual mood should be:
++- clear
+ - technical
+-- confident
+-- fast to scan
+-
+-The UI should avoid looking like generic AI-generated dashboards.
+-It should feel authored.
+-
+-## Primary Inspiration
+-
+-Inspired by the DESIGN.md collection from:
+-
+-- https://github.com/voltagent/awesome-design-md
+-
+-Especially the visual language described for VoltAgent:
+-
+-- void-dark surfaces
+-- emerald accent
+-- terminal-native tone
+-- developer-tool clarity
+-
+-This project should not become a clone of VoltAgent.
+-Use that direction as a design grammar, then adapt it to fiber/Olt operations.
+-
+-## Design Personality
+-
+-Think:
+-
+-- network operations room
+-- engineered, not playful
+-- modern utility software
+-- minimal, but not sterile
+-
+-Avoid:
+-
+-- default blue SaaS dashboard look
+-- emoji-heavy navigation
+-- generic gradient-on-white startup visuals
+-- purple neon AI cliché
+-- oversized marketing copy inside app screens
+-
+-## Color System
+-
+-Core palette:
+-
+-- background: warm technical mist, not flat white
+-- shell/sidebar: near-black green
+-- primary accent: emerald
+-- support neutrals: soft graphite and muted stone
+-- danger: restrained red
+-- success: dark mint, not bright green
+-- warning: warm amber
+-
+-Use accent color sparingly.
+-Accent is for:
+-
+-- active nav
+-- primary actions
+-- selected states
+-- operational emphasis
+-
+-Do not turn every element green.
+-
+-## Typography
+-
+-Primary font:
+-
+-- geometric grotesk or technical sans
+-
+-Monospace:
+-
+-- reserved for serials
+-- ports
+-- command outputs
+-- metrics
+-
+-Typography should create hierarchy through:
+-
+-- scale
+-- spacing
+-- casing
+-- weight
+-
+-Not through random color shifts.
+-
+-Prefer:
+-
+-- compact uppercase micro-labels
+-- strong section titles
+-- muted supporting text
+-
+-## Layout Principles
+-
+-The app should feel like a control surface with a strong frame:
+-
+-- sculpted sidebar
+-- spacious content canvas
+-- soft layered backgrounds
+-- clear panels
+-
+-Use:
+-
+-- rounded large containers
+-- translucent surfaces where appropriate
+-- subtle borders
+-- strong spacing rhythm
+-
+-Avoid:
+-
+-- cramped cards
+-- default table styling
+-- too many equal-weight boxes
+-
+-## Component Language
+-
+-### Sidebar
+-
+-Should feel premium and operational:
+-
+-- dark shell
+-- compact labels
+-- consistent icon treatment
+-- active state with depth
+-
+-No emoji icons.
+-
+-### Cards
+-
+-Cards should feel like instrument panels:
+-
+-- soft elevation
+-- subtle border
+-- clear value emphasis
+-- restrained supporting metadata
+-
+-### Tables
+-
+-Tables are a core product surface.
+-They must be:
+-
+-- highly legible
+-- compact but breathable
+-- easy to scan row by row
+-
+-Use:
+-
+-- strong headers
+-- clear zebra or hover behavior
+-- monospace where data is structural
+-- action controls that don’t visually scream
+-
+-### Forms
+-
+-Forms should feel deliberate and operator-friendly:
+-
+-- strong grouping
+-- descriptive helper text
+-- prominent current context
+-- minimal friction
+-
+-For provisioning flows, highlight:
+-
+-- PON
+-- VLAN
+-- service profile
+-- line profile
+-- GEM
+-
+-as operational facts, not generic form fields.
+-
+-## Motion
+-
+-Motion should be sparse and useful.
+-
+-Use only:
+-
+-- soft fade/slide on page entry
+-- subtle panel hover transitions
+-- loading shimmer or pulse when operationally useful
++- grounded
++- light, but not playful
++- premium through restraint
++
++This is a bright control surface, not a dark NOC fantasy and not a startup SaaS clone. White space is allowed, but it must be structured. Surfaces should feel mineral, cool, and slightly softened rather than stark or glossy.
++
++## 2. Color Palette & Roles
++- **Mineral Mist (#F4F7F8)**: Used for the app background and large layout atmosphere. This is the canvas tone and should replace flat white.
++- **Cloud Surface (#FFFFFF)**: Used for primary cards, tables, forms, and high-readability panels.
++- **Cold Porcelain (#F8FBFC)**: Used for secondary surfaces, grouped subpanels, and empty states.
++- **Steel Outline (#D9E2E8)**: Used for borders, separators, table divisions, and quiet structure lines.
++- **Graphite Ink (#1F2E3D)**: Used for primary text, headings, and dense operational information.
++- **Slate Copy (#607080)**: Used for secondary text, helper copy, and explanatory metadata.
++- **Sea Glass Accent (#2E8B6D)**: Used for active navigation, positive status, and operational match states. This should be present but never dominant.
++- **Powder Mint (#EAF7F1)**: Used as the soft surface under Sea Glass Accent elements.
++- **Mineral Blue Action (#8EAFF1)**: Used for primary actions and forward-progress controls such as “Salvar”, “Provisionar” and “Atualizar”.
++- **Deep Action Ink (#27456F)**: Used as text on blue action buttons and for supporting action emphasis.
++- **Warm Amber Signal (#E7B554)**: Used for warning, degraded state, and attention markers.
++- **Soft Coral Alert (#E57E73)**: Used for destructive actions, failure, or risk messaging.
++
++Color usage rules:
++- Green is for state and confirmation, not for every button.
++- Blue is for action and momentum, not for status.
++- Red appears only on destructive or error flows.
++- Dark fills should be avoided in the main shell except where raw terminal output genuinely needs it.
++
++## 3. Typography Rules
++Primary UI type should be a civic, highly legible sans with a technical tone rather than a trendy startup face. It should feel authoritative and invisible at the same time.
++
++Recommended pairing:
++- **Primary Sans:** Public Sans
++- **Monospace:** IBM Plex Mono
++
++Typography behavior:
++- Section titles should be strong, compact, and calm.
++- Supporting copy should use softer gray, never low-contrast pastel.
++- Micro-labels should use uppercase sparingly with deliberate spacing.
++- Metrics, ports, VLANs, serials, and command outputs should use monospace for structural clarity.
+ 
+ Avoid:
+-
+-- flashy dashboard animations
+-- bouncing counters
+-- decorative motion loops
+-
+-## Content Style
+-
+-Language should be:
+-
+-- direct
+-- operational
+-- clear
+-- low-drama
+-
+-Examples:
+-
+-- “ONT provisionada”
+-- “Template aplicado para PON 0/1/7”
+-- “OLT temporariamente indisponível”
+-
+-Avoid fluffy product copy.
+-
+-## Page-Specific Guidance
+-
+-### Login
+-
+-Should feel like access to an operations system.
+-Less marketing, more control and trust.
+-
+-### Dashboard
+-
+-Should prioritize:
+-
+-- current OLT health
+-- ONTs online/offline
+-- alarms
+-- autofind queue
+-
+-The first screen must read like an operational summary, not a KPI gallery.
+-
+-### Autofind
+-
+-Should feel actionable.
+-Each row must make it obvious:
+-
+-- where the ONT was found
+-- what template will be used
+-- what happens next
+-
+-### Provision
+-
+-Should look like a guided operational workflow.
+-Context and template data should feel embedded into the UI, not hidden in plain inputs.
+-
+-### ONTs
+-
+-Should feel like an inventory console:
+-
+-- dense but readable
+-- excellent scanability
+-- clear operational status
+-
+-## Implementation Notes
+-
+-When redesigning:
+-
+-- prefer improving shared primitives first
+-- keep pages visually consistent
+-- avoid introducing random styles per page
+-- preserve responsiveness
+-- preserve readability on smaller screens
+-
+-## Rule of Thumb
+-
+-If a screen looks like a generic admin template, it is wrong.
+-If it looks like a serious fiber/network operations console with a modern crafted finish, it is right.
++- overly geometric “AI dashboard” type
++- exaggerated tracking everywhere
++- over-styled hero typography inside the app shell
++
++## 4. Component Stylings
++* **Buttons:** Generously rounded, compact, and structured. Primary buttons use Mineral Blue Action with dark text. Secondary buttons remain white with steel outlines. Destructive actions use pale coral surfaces with restrained red text.
++* **Cards/Containers:** Large rounded containers with cool white surfaces, thin steel outlines, and whisper-soft shadows. Cards should feel precise and layered, never puffy or glassy.
++* **Inputs/Forms:** Bright white fields with subtle borders, soft blue focus rings, and consistent spacing. Inputs should feel deliberate and operator-friendly rather than decorative.
++* **Status Pills:** Lightly tinted pills with thin outlines. They should read like annotations, not badges shouting for attention.
++* **Tables:** Clean white rows, crisp headers, restrained hover states, and monospace only where the data is structural.
++
++## 5. Layout Principles
++The interface should have a strong frame:
++- a stable left rail
++- a calm header
++- a spacious content field
++- clearly nested panels
++
++Spacing should prioritize rhythm over density:
++- strong outer page margins
++- softer internal card padding
++- visible grouping between overview, actions, and detail
++
++The layout should not chase visual spectacle. It should support fast scanning:
++- first read: where am I
++- second read: what matters now
++- third read: what can I do next
++
++If a screen feels like a dashboard collage, it is wrong.
++If a screen feels like an operational briefing surface, it is right.
+diff --git a/backend/src/config.js b/backend/src/config.js
+index 16f3a57..01556e4 100644
+--- a/backend/src/config.js
++++ b/backend/src/config.js
+@@ -30,6 +30,17 @@ function databasePathFromEnv() {
+   return './olt_manager.db';
+ }
+ 
++function bootstrapCommandsFromEnv() {
++  const raw = process.env.OLT_SESSION_BOOTSTRAP_COMMANDS;
++  const fallback = 'undo idle-timeout';
++  const source = raw == null || raw.trim() === '' ? fallback : raw;
++
++  return source
++    .split(/\r?\n|;/)
++    .map((command) => command.trim())
++    .filter(Boolean);
++}
++
+ export default {
+   SECRET_KEY:                process.env.SECRET_KEY      || 'troque-esta-chave-em-producao',
+   TOKEN_EXPIRE_HOURS:        Number(process.env.TOKEN_EXPIRE_HOURS || 8),
+@@ -40,6 +51,7 @@ export default {
+   OLT_USERNAME:              process.env.OLT_USERNAME     || 'admin',
+   OLT_PASSWORD:              process.env.OLT_PASSWORD     || '',
+   OLT_ENABLE_PASSWORD:       process.env.OLT_ENABLE_PASSWORD || '',
++  OLT_SESSION_BOOTSTRAP_COMMANDS: bootstrapCommandsFromEnv(),
+   OLT_NAME:                  process.env.OLT_NAME        || 'MA5800-X',
+   OLT_TIMEOUT:               Number(process.env.OLT_TIMEOUT || 30),
+ 
+diff --git a/backend/src/db.js b/backend/src/db.js
+index 927cde0..2101d44 100644
+--- a/backend/src/db.js
++++ b/backend/src/db.js
+@@ -24,6 +24,181 @@ db.exec(`
+     success   INTEGER NOT NULL DEFAULT 1,
+     timestamp TEXT    NOT NULL DEFAULT (datetime('now'))
+   );
++
++  CREATE TABLE IF NOT EXISTS provision_templates (
++    port            INTEGER PRIMARY KEY,
++    slot            INTEGER NOT NULL DEFAULT 1,
++    lineprofile_id  INTEGER NOT NULL,
++    srvprofile_id   INTEGER NOT NULL,
++    gemport         INTEGER NOT NULL,
++    vlan_id         INTEGER,
++    user_vlan       INTEGER,
++    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
++  );
++
++  CREATE TABLE IF NOT EXISTS provision_template_profiles (
++    id              INTEGER PRIMARY KEY AUTOINCREMENT,
++    owner_username  TEXT,
++    slot            INTEGER NOT NULL DEFAULT 1,
++    pon_start       INTEGER NOT NULL,
++    pon_end         INTEGER NOT NULL,
++    lineprofile_id  INTEGER NOT NULL,
++    srvprofile_id   INTEGER NOT NULL,
++    gemport         INTEGER NOT NULL,
++    vlan_id         INTEGER,
++    user_vlan       INTEGER,
++    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
++    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
++    FOREIGN KEY (owner_username) REFERENCES users(username) ON DELETE CASCADE
++  );
++
++  CREATE TABLE IF NOT EXISTS provision_template_catalog (
++    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
++    name                TEXT NOT NULL UNIQUE,
++    description         TEXT,
++    lineprofile_mode    TEXT NOT NULL DEFAULT 'fixed',
++    lineprofile_id      INTEGER,
++    srvprofile_mode     TEXT NOT NULL DEFAULT 'fixed',
++    srvprofile_id       INTEGER,
++    gemport             INTEGER NOT NULL DEFAULT 6,
++    vlan_id             INTEGER,
++    user_vlan_mode      TEXT NOT NULL DEFAULT 'same_as_vlan',
++    user_vlan           INTEGER,
++    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
++    updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
++  );
++
++  CREATE TABLE IF NOT EXISTS provision_template_bindings (
++    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
++    slot                INTEGER NOT NULL DEFAULT 1,
++    pon_start           INTEGER NOT NULL,
++    pon_end             INTEGER NOT NULL,
++    template_id         INTEGER NOT NULL,
++    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
++    updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
++    FOREIGN KEY (template_id) REFERENCES provision_template_catalog(id)
++  );
+ `);
+ 
++const templateCount = db.prepare('SELECT COUNT(*) AS count FROM provision_templates').get().count;
++if (templateCount === 0) {
++  const defaults = [
++    [0, 1, 20, 20, 6, 20, 20],
++    [1, 1, 20, 20, 6, 20, 20],
++    [2, 1, 20, 20, 6, 20, 20],
++    [3, 1, 20, 20, 6, 30, 30],
++    [4, 1, 20, 20, 6, 30, 30],
++    [5, 1, 20, 20, 6, 40, 40],
++    [6, 1, 20, 20, 6, 40, 40],
++    [7, 1, 20, 20, 6, 50, 50],
++    [8, 1, 20, 20, 6, 50, 50],
++    [9, 1, 20, 20, 6, 60, 60],
++    [10, 1, 20, 20, 6, 60, 60],
++    [11, 1, 20, 20, 6, 70, 70],
++    [12, 1, 20, 20, 6, 70, 70],
++    [13, 1, 20, 20, 6, 80, 80],
++    [14, 1, 20, 20, 6, 80, 80],
++    [15, 1, 20, 20, 6, null, null],
++  ];
++
++  const insert = db.prepare(`
++    INSERT INTO provision_templates (
++      port, slot, lineprofile_id, srvprofile_id, gemport, vlan_id, user_vlan
++    ) VALUES (?, ?, ?, ?, ?, ?, ?)
++  `);
++
++  const seed = db.transaction(() => {
++    for (const row of defaults) insert.run(...row);
++  });
++
++  seed();
++}
++
++const profileCount = db.prepare('SELECT COUNT(*) AS count FROM provision_template_profiles').get().count;
++if (profileCount === 0) {
++  const defaults = [
++    [null, 1, 0, 2, 20, 20, 6, 20, 20],
++    [null, 1, 3, 4, 20, 20, 6, 30, 30],
++    [null, 1, 5, 6, 20, 20, 6, 40, 40],
++    [null, 1, 7, 8, 20, 20, 6, 50, 50],
++    [null, 1, 9, 10, 20, 20, 6, 60, 60],
++    [null, 1, 11, 12, 20, 20, 6, 70, 70],
++    [null, 1, 13, 14, 20, 20, 6, 80, 80],
++  ];
++
++  const insert = db.prepare(`
++    INSERT INTO provision_template_profiles (
++      owner_username, slot, pon_start, pon_end, lineprofile_id, srvprofile_id, gemport, vlan_id, user_vlan
++    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
++  `);
++
++  const seedProfiles = db.transaction(() => {
++    for (const row of defaults) insert.run(...row);
++  });
++
++  seedProfiles();
++}
++
++const catalogCount = db.prepare('SELECT COUNT(*) AS count FROM provision_template_catalog').get().count;
++if (catalogCount === 0) {
++  const defaults = [20, 30, 40, 50, 60, 70, 80].map((vlan) => ({
++    name: `Padrao VLAN ${vlan}`,
++    description: `Template operacional para VLAN ${vlan}`,
++    lineprofile_mode: 'same_as_vlan',
++    lineprofile_id: null,
++    srvprofile_mode: 'same_as_vlan',
++    srvprofile_id: null,
++    gemport: 6,
++    vlan_id: vlan,
++    user_vlan_mode: 'same_as_vlan',
++    user_vlan: null,
++  }));
++
++  const insertTemplate = db.prepare(`
++    INSERT INTO provision_template_catalog (
++      name, description, lineprofile_mode, lineprofile_id,
++      srvprofile_mode, srvprofile_id, gemport, vlan_id, user_vlan_mode, user_vlan
++    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
++  `);
++
++  const insertBinding = db.prepare(`
++    INSERT INTO provision_template_bindings (
++      slot, pon_start, pon_end, template_id
++    ) VALUES (?, ?, ?, ?)
++  `);
++
++  const seedCatalog = db.transaction(() => {
++    const ids = defaults.map((item) => {
++      const info = insertTemplate.run(
++        item.name,
++        item.description,
++        item.lineprofile_mode,
++        item.lineprofile_id,
++        item.srvprofile_mode,
++        item.srvprofile_id,
++        item.gemport,
++        item.vlan_id,
++        item.user_vlan_mode,
++        item.user_vlan,
++      );
++
++      return Number(info.lastInsertRowid);
++    });
++
++    const bindings = [
++      [1, 0, 2, ids[0]],
++      [1, 3, 4, ids[1]],
++      [1, 5, 6, ids[2]],
++      [1, 7, 8, ids[3]],
++      [1, 9, 10, ids[4]],
++      [1, 11, 12, ids[5]],
++      [1, 13, 14, ids[6]],
++    ];
++
++    for (const row of bindings) insertBinding.run(...row);
++  });
++
++  seedCatalog();
++}
++
+ export default db;
+diff --git a/backend/src/olt/provisionTemplates.js b/backend/src/olt/provisionTemplates.js
+index 08999e8..6b418b5 100644
+--- a/backend/src/olt/provisionTemplates.js
++++ b/backend/src/olt/provisionTemplates.js
+@@ -1,34 +1,310 @@
+-export const DEFAULT_PROVISION_TEMPLATE = {
++import db from '../db.js';
++
++const DEFAULT_TEMPLATE = {
++  template_id: null,
++  template_name: null,
+   slot: 1,
+   lineprofile_id: 20,
+   srvprofile_id: 20,
+   gemport: 6,
++  vlan_id: null,
++  user_vlan: null,
++  auto_matched: false,
++  source: 'manual',
+ };
+ 
+-export const PON_VLAN_BY_PORT = {
+-  '0': 20,
+-  '1': 20,
+-  '2': 20,
+-  '3': 30,
+-  '4': 30,
+-  '5': 40,
+-  '6': 40,
+-  '7': 50,
+-  '8': 50,
+-  '9': 60,
+-  '10': 60,
+-  '11': 70,
+-  '12': 70,
+-  '13': 80,
+-  '14': 80,
+-};
++function numberOrNull(value) {
++  return value == null ? null : Number(value);
++}
++
++function normalizeCatalogRow(row) {
++  return {
++    id: Number(row.id),
++    name: String(row.name),
++    description: row.description ?? '',
++    lineprofile_mode: row.lineprofile_mode,
++    lineprofile_id: numberOrNull(row.lineprofile_id),
++    srvprofile_mode: row.srvprofile_mode,
++    srvprofile_id: numberOrNull(row.srvprofile_id),
++    gemport: Number(row.gemport),
++    vlan_id: numberOrNull(row.vlan_id),
++    user_vlan_mode: row.user_vlan_mode,
++    user_vlan: numberOrNull(row.user_vlan),
++    created_at: row.created_at,
++    updated_at: row.updated_at,
++  };
++}
++
++function resolveCatalogTemplate(template, slot, port) {
++  if (!template) {
++    return {
++      port: Number(port),
++      slot: Number(slot),
++      ...DEFAULT_TEMPLATE,
++      slot: Number(slot),
++    };
++  }
++
++  const vlanId = template.vlan_id == null ? null : Number(template.vlan_id);
++  const userVlan = template.user_vlan_mode === 'same_as_vlan'
++    ? vlanId
++    : (template.user_vlan == null ? null : Number(template.user_vlan));
++  const lineprofileId = template.lineprofile_mode === 'same_as_vlan'
++    ? vlanId
++    : (template.lineprofile_id == null ? null : Number(template.lineprofile_id));
++  const srvprofileId = template.srvprofile_mode === 'same_as_vlan'
++    ? vlanId
++    : (template.srvprofile_id == null ? null : Number(template.srvprofile_id));
++
++  return {
++    port: Number(port),
++    slot: Number(slot),
++    template_id: Number(template.id),
++    template_name: String(template.name),
++    lineprofile_id: lineprofileId,
++    srvprofile_id: srvprofileId,
++    gemport: Number(template.gemport),
++    vlan_id: vlanId,
++    user_vlan: userVlan,
++    auto_matched:
++      vlanId != null &&
++      userVlan != null &&
++      lineprofileId != null &&
++      srvprofileId != null,
++    source: 'binding',
++    description: template.description ?? '',
++    lineprofile_mode: template.lineprofile_mode,
++    srvprofile_mode: template.srvprofile_mode,
++    user_vlan_mode: template.user_vlan_mode,
++    created_at: template.created_at,
++    updated_at: template.updated_at,
++  };
++}
++
++function getBindingTemplateRow(slot, port) {
++  return db.prepare(`
++    SELECT
++      b.id AS binding_id,
++      b.slot,
++      b.pon_start,
++      b.pon_end,
++      b.created_at AS binding_created_at,
++      b.updated_at AS binding_updated_at,
++      t.id,
++      t.name,
++      t.description,
++      t.lineprofile_mode,
++      t.lineprofile_id,
++      t.srvprofile_mode,
++      t.srvprofile_id,
++      t.gemport,
++      t.vlan_id,
++      t.user_vlan_mode,
++      t.user_vlan,
++      t.created_at,
++      t.updated_at
++    FROM provision_template_bindings b
++    JOIN provision_template_catalog t ON t.id = b.template_id
++    WHERE b.slot = ?
++      AND ? BETWEEN b.pon_start AND b.pon_end
++    ORDER BY (b.pon_end - b.pon_start) ASC, b.id ASC
++    LIMIT 1
++  `).get(Number(slot), Number(port));
++}
++
++export function listTemplateCatalog() {
++  return db.prepare(`
++    SELECT id, name, description, lineprofile_mode, lineprofile_id, srvprofile_mode, srvprofile_id, gemport, vlan_id, user_vlan_mode, user_vlan, created_at, updated_at
++    FROM provision_template_catalog
++    ORDER BY name COLLATE NOCASE ASC
++  `).all().map(normalizeCatalogRow);
++}
++
++export function getTemplateCatalogItem(id) {
++  const row = db.prepare(`
++    SELECT id, name, description, lineprofile_mode, lineprofile_id, srvprofile_mode, srvprofile_id, gemport, vlan_id, user_vlan_mode, user_vlan, created_at, updated_at
++    FROM provision_template_catalog
++    WHERE id = ?
++  `).get(Number(id));
++
++  return row ? normalizeCatalogRow(row) : null;
++}
++
++export function createTemplateCatalogItem(input) {
++  const info = db.prepare(`
++    INSERT INTO provision_template_catalog (
++      name, description, lineprofile_mode, lineprofile_id,
++      srvprofile_mode, srvprofile_id, gemport, vlan_id, user_vlan_mode, user_vlan, updated_at
++    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
++  `).run(
++    input.name,
++    input.description ?? '',
++    input.lineprofile_mode,
++    input.lineprofile_id,
++    input.srvprofile_mode,
++    input.srvprofile_id,
++    input.gemport,
++    input.vlan_id,
++    input.user_vlan_mode,
++    input.user_vlan,
++  );
++
++  return getTemplateCatalogItem(Number(info.lastInsertRowid));
++}
++
++export function updateTemplateCatalogItem(id, input) {
++  db.prepare(`
++    UPDATE provision_template_catalog
++    SET
++      name = ?,
++      description = ?,
++      lineprofile_mode = ?,
++      lineprofile_id = ?,
++      srvprofile_mode = ?,
++      srvprofile_id = ?,
++      gemport = ?,
++      vlan_id = ?,
++      user_vlan_mode = ?,
++      user_vlan = ?,
++      updated_at = datetime('now')
++    WHERE id = ?
++  `).run(
++    input.name,
++    input.description ?? '',
++    input.lineprofile_mode,
++    input.lineprofile_id,
++    input.srvprofile_mode,
++    input.srvprofile_id,
++    input.gemport,
++    input.vlan_id,
++    input.user_vlan_mode,
++    input.user_vlan,
++    Number(id),
++  );
++
++  return getTemplateCatalogItem(id);
++}
++
++export function deleteTemplateCatalogItem(id) {
++  return db.prepare('DELETE FROM provision_template_catalog WHERE id = ?').run(Number(id));
++}
++
++export function listTemplateBindings() {
++  return db.prepare(`
++    SELECT
++      b.id,
++      b.slot,
++      b.pon_start,
++      b.pon_end,
++      b.template_id,
++      b.created_at,
++      b.updated_at,
++      t.name AS template_name,
++      t.description AS template_description
++    FROM provision_template_bindings b
++    JOIN provision_template_catalog t ON t.id = b.template_id
++    ORDER BY b.slot ASC, b.pon_start ASC, b.pon_end ASC, b.id ASC
++  `).all().map((row) => ({
++    id: Number(row.id),
++    slot: Number(row.slot),
++    pon_start: Number(row.pon_start),
++    pon_end: Number(row.pon_end),
++    template_id: Number(row.template_id),
++    template_name: row.template_name,
++    template_description: row.template_description ?? '',
++    created_at: row.created_at,
++    updated_at: row.updated_at,
++  }));
++}
++
++export function getTemplateBinding(id) {
++  const row = db.prepare(`
++    SELECT
++      b.id,
++      b.slot,
++      b.pon_start,
++      b.pon_end,
++      b.template_id,
++      b.created_at,
++      b.updated_at,
++      t.name AS template_name,
++      t.description AS template_description
++    FROM provision_template_bindings b
++    JOIN provision_template_catalog t ON t.id = b.template_id
++    WHERE b.id = ?
++  `).get(Number(id));
++
++  if (!row) return null;
+ 
+-export function getProvisionTemplate(port) {
+-  const vlan = PON_VLAN_BY_PORT[String(port)];
+   return {
+-    ...DEFAULT_PROVISION_TEMPLATE,
+-    vlan_id: vlan ?? null,
+-    user_vlan: vlan ?? null,
+-    auto_matched: vlan != null,
++    id: Number(row.id),
++    slot: Number(row.slot),
++    pon_start: Number(row.pon_start),
++    pon_end: Number(row.pon_end),
++    template_id: Number(row.template_id),
++    template_name: row.template_name,
++    template_description: row.template_description ?? '',
++    created_at: row.created_at,
++    updated_at: row.updated_at,
+   };
+ }
++
++export function findOverlappingBinding({ slot, pon_start, pon_end, excludeId = null }) {
++  return db.prepare(`
++    SELECT id, slot, pon_start, pon_end, template_id
++    FROM provision_template_bindings
++    WHERE slot = ?
++      AND NOT (pon_end < ? OR pon_start > ?)
++      AND (? IS NULL OR id != ?)
++    LIMIT 1
++  `).get(Number(slot), Number(pon_start), Number(pon_end), excludeId == null ? null : Number(excludeId), excludeId == null ? null : Number(excludeId));
++}
++
++export function createTemplateBinding(input) {
++  const info = db.prepare(`
++    INSERT INTO provision_template_bindings (
++      slot, pon_start, pon_end, template_id, updated_at
++    ) VALUES (?, ?, ?, ?, datetime('now'))
++  `).run(
++    input.slot,
++    input.pon_start,
++    input.pon_end,
++    input.template_id,
++  );
++
++  return getTemplateBinding(Number(info.lastInsertRowid));
++}
++
++export function updateTemplateBinding(id, input) {
++  db.prepare(`
++    UPDATE provision_template_bindings
++    SET
++      slot = ?,
++      pon_start = ?,
++      pon_end = ?,
++      template_id = ?,
++      updated_at = datetime('now')
++    WHERE id = ?
++  `).run(
++    input.slot,
++    input.pon_start,
++    input.pon_end,
++    input.template_id,
++    Number(id),
++  );
++
++  return getTemplateBinding(id);
++}
++
++export function deleteTemplateBinding(id) {
++  return db.prepare('DELETE FROM provision_template_bindings WHERE id = ?').run(Number(id));
++}
++
++export function getProvisionTemplate(port, slot = 1) {
++  const row = getBindingTemplateRow(slot, port);
++  return resolveCatalogTemplate(row, slot, port);
++}
++
++export function listProvisionTemplates(slot = 1) {
++  return Array.from({ length: 16 }, (_, port) => getProvisionTemplate(port, slot));
++}
+diff --git a/backend/src/olt/routes.js b/backend/src/olt/routes.js
+index af10638..3f0443b 100644
+--- a/backend/src/olt/routes.js
++++ b/backend/src/olt/routes.js
+@@ -1,11 +1,93 @@
+ import * as cmd from './commands.js';
+ import * as v from './validator.js';
+-import { getProvisionTemplate } from './provisionTemplates.js';
++import {
++  createTemplateBinding,
++  createTemplateCatalogItem,
++  deleteTemplateBinding,
++  deleteTemplateCatalogItem,
++  findOverlappingBinding,
++  getProvisionTemplate,
++  getTemplateBinding,
++  getTemplateCatalogItem,
++  listProvisionTemplates,
++  listTemplateBindings,
++  listTemplateCatalog,
++  updateTemplateBinding,
++  updateTemplateCatalogItem,
++} from './provisionTemplates.js';
+ import { writeAudit } from '../audit/routes.js';
+ 
+ export default async function oltRoutes(fastify) {
+   const auth = { onRequest: [fastify.authenticate] };
+ 
++  function normalizeTemplatePayload(body = {}) {
++    const name = String(body.name ?? '').trim();
++    if (!name) {
++      throw Object.assign(new Error('Nome do template é obrigatório'), { statusCode: 422 });
++    }
++
++    const description = String(body.description ?? '').trim();
++    const vlanId = body.vlan_id == null || body.vlan_id === '' ? null : v.validateVlan(body.vlan_id, 'VLAN');
++    const gemport = v.validateGemport(body.gemport ?? 0);
++
++    const lineprofileMode = body.lineprofile_mode === 'same_as_vlan' ? 'same_as_vlan' : 'fixed';
++    const srvprofileMode = body.srvprofile_mode === 'same_as_vlan' ? 'same_as_vlan' : 'fixed';
++    const userVlanMode = body.user_vlan_mode === 'fixed' ? 'fixed' : 'same_as_vlan';
++
++    const lineprofileId = lineprofileMode === 'same_as_vlan'
++      ? null
++      : v.validateProfileId(body.lineprofile_id, 'Line Profile');
++    const srvprofileId = srvprofileMode === 'same_as_vlan'
++      ? null
++      : v.validateProfileId(body.srvprofile_id, 'Service Profile');
++    const userVlan = userVlanMode === 'same_as_vlan'
++      ? null
++      : v.validateVlan(body.user_vlan, 'User VLAN');
++
++    if ((lineprofileMode === 'same_as_vlan' || srvprofileMode === 'same_as_vlan' || userVlanMode === 'same_as_vlan') && vlanId == null) {
++      throw Object.assign(new Error('VLAN é obrigatória quando algum campo herda da VLAN'), { statusCode: 422 });
++    }
++
++    return {
++      name,
++      description,
++      lineprofile_mode: lineprofileMode,
++      lineprofile_id: lineprofileId,
++      srvprofile_mode: srvprofileMode,
++      srvprofile_id: srvprofileId,
++      gemport,
++      vlan_id: vlanId,
++      user_vlan_mode: userVlanMode,
++      user_vlan: userVlan,
++    };
++  }
++
++  function normalizeBindingPayload(body = {}) {
++    const slot = v.validateSlot(body.slot ?? 1);
++    const ponStart = v.validatePort(body.pon_start);
++    const ponEnd = v.validatePort(body.pon_end);
++    const templateId = Number(body.template_id);
++
++    if (!Number.isInteger(templateId) || templateId < 1) {
++      throw Object.assign(new Error('Template inválido para vínculo'), { statusCode: 422 });
++    }
++
++    if (ponEnd < ponStart) {
++      throw Object.assign(new Error('PON final deve ser maior ou igual à inicial'), { statusCode: 422 });
++    }
++
++    if (!getTemplateCatalogItem(templateId)) {
++      throw Object.assign(new Error('Template selecionado não existe'), { statusCode: 404 });
++    }
++
++    return {
++      slot,
++      pon_start: ponStart,
++      pon_end: ponEnd,
++      template_id: templateId,
++    };
++  }
++
+   // ── Status / Versão ────────────────────────────────────────────────────────
+   fastify.get('/status', auth, async () => {
+     const { ok, output } = await cmd.getStatus();
+@@ -22,7 +104,98 @@ export default async function oltRoutes(fastify) {
+ 
+   fastify.get('/provision-template', auth, async (req) => {
+     const port = v.validatePort(req.query.port);
+-    return getProvisionTemplate(port);
++    const slot = v.validateSlot(req.query.slot ?? 1);
++    return getProvisionTemplate(port, slot);
++  });
++
++  fastify.get('/provision-templates', auth, async (req) => {
++    const slot = v.validateSlot(req.query.slot ?? 1);
++    return { templates: listProvisionTemplates(slot) };
++  });
++
++  fastify.get('/template-catalog', auth, async () => {
++    return { templates: listTemplateCatalog() };
++  });
++
++  fastify.post('/template-catalog', { onRequest: [fastify.authenticate, fastify.requireAdmin] }, async (req, reply) => {
++    const payload = normalizeTemplatePayload(req.body ?? {});
++    const created = createTemplateCatalogItem(payload);
++    writeAudit(req.user.sub, 'create_template_catalog', `template=${created?.name ?? payload.name}`, true);
++    return reply.code(201).send(created);
++  });
++
++  fastify.put('/template-catalog/:id', { onRequest: [fastify.authenticate, fastify.requireAdmin] }, async (req, reply) => {
++    const id = Number(req.params.id);
++    if (!getTemplateCatalogItem(id)) {
++      return reply.code(404).send({ detail: 'Template não encontrado' });
++    }
++
++    const payload = normalizeTemplatePayload(req.body ?? {});
++    const updated = updateTemplateCatalogItem(id, payload);
++    writeAudit(req.user.sub, 'update_template_catalog', `template_id=${id} template=${updated?.name ?? payload.name}`, true);
++    return reply.code(200).send(updated);
++  });
++
++  fastify.delete('/template-catalog/:id', { onRequest: [fastify.authenticate, fastify.requireAdmin] }, async (req, reply) => {
++    const id = Number(req.params.id);
++    const existing = getTemplateCatalogItem(id);
++    if (!existing) {
++      return reply.code(404).send({ detail: 'Template não encontrado' });
++    }
++
++    try {
++      deleteTemplateCatalogItem(id);
++    } catch {
++      return reply.code(409).send({ detail: 'Template está vinculado a alguma PON e não pode ser excluído agora' });
++    }
++
++    writeAudit(req.user.sub, 'delete_template_catalog', `template_id=${id} template=${existing.name}`, true);
++    return reply.code(204).send();
++  });
++
++  fastify.get('/template-bindings', auth, async () => {
++    return { bindings: listTemplateBindings() };
++  });
++
++  fastify.post('/template-bindings', { onRequest: [fastify.authenticate, fastify.requireAdmin] }, async (req, reply) => {
++    const payload = normalizeBindingPayload(req.body ?? {});
++    const overlap = findOverlappingBinding(payload);
++    if (overlap) {
++      return reply.code(409).send({ detail: `Já existe um vínculo cobrindo 0/${payload.slot}/${payload.pon_start}-${payload.pon_end}` });
++    }
++
++    const created = createTemplateBinding(payload);
++    writeAudit(req.user.sub, 'create_template_binding', `slot=${payload.slot} pon=${payload.pon_start}-${payload.pon_end} template_id=${payload.template_id}`, true);
++    return reply.code(201).send(created);
++  });
++
++  fastify.put('/template-bindings/:id', { onRequest: [fastify.authenticate, fastify.requireAdmin] }, async (req, reply) => {
++    const id = Number(req.params.id);
++    if (!getTemplateBinding(id)) {
++      return reply.code(404).send({ detail: 'Vínculo não encontrado' });
++    }
++
++    const payload = normalizeBindingPayload(req.body ?? {});
++    const overlap = findOverlappingBinding({ ...payload, excludeId: id });
++    if (overlap) {
++      return reply.code(409).send({ detail: `Já existe um vínculo cobrindo 0/${payload.slot}/${payload.pon_start}-${payload.pon_end}` });
++    }
++
++    const updated = updateTemplateBinding(id, payload);
++    writeAudit(req.user.sub, 'update_template_binding', `binding_id=${id} slot=${payload.slot} pon=${payload.pon_start}-${payload.pon_end} template_id=${payload.template_id}`, true);
++    return reply.code(200).send(updated);
++  });
++
++  fastify.delete('/template-bindings/:id', { onRequest: [fastify.authenticate, fastify.requireAdmin] }, async (req, reply) => {
++    const id = Number(req.params.id);
++    const existing = getTemplateBinding(id);
++    if (!existing) {
++      return reply.code(404).send({ detail: 'Vínculo não encontrado' });
++    }
++
++    deleteTemplateBinding(id);
++    writeAudit(req.user.sub, 'delete_template_binding', `binding_id=${id} slot=${existing.slot} pon=${existing.pon_start}-${existing.pon_end}`, true);
++    return reply.code(204).send();
+   });
+ 
+   // ── Boards ─────────────────────────────────────────────────────────────────
+diff --git a/backend/src/olt/ssh.js b/backend/src/olt/ssh.js
+index 7f1fbe3..1fc2b14 100644
+--- a/backend/src/olt/ssh.js
++++ b/backend/src/olt/ssh.js
+@@ -12,6 +12,7 @@ const PROMPT_RE = /(?:^|\r?\n)[^\r\n]*[>#]\s*$/;
+ const PROMPT_PRIV = /(?:^|\r?\n)[^\r\n]*#\s*$/;
+ const CONTINUE_RE = /(?:\{[^{}\r\n]*<cr>[^{}\r\n]*\}:|---- More[\s\S]*|More \( Press 'Q' to break \)|Configuration console time out, please retry to log on)\s*$/i;
+ const PASSWORD_RE = /password\s*:?$/i;
++const LOGOUT_CONFIRM_RE = /are you sure to log out\?\s*\(y\/n\)\[n\]:\s*$/i;
+ 
+ // ── Mutex simples ─────────────────────────────────────────────────────────────
+ class Mutex {
+@@ -76,7 +77,7 @@ class OLTSession {
+ 
+     while (true) {
+       const remaining = Math.max(1, deadline - Date.now());
+-      const chunk = await this.waitForAny([PROMPT_RE, CONTINUE_RE], remaining);
++      const chunk = await this.waitForAny([PROMPT_RE, CONTINUE_RE, LOGOUT_CONFIRM_RE], remaining);
+       raw += chunk;
+ 
+       if (CONTINUE_RE.test(chunk)) {
+@@ -85,6 +86,12 @@ class OLTSession {
+         continue;
+       }
+ 
++      if (LOGOUT_CONFIRM_RE.test(chunk)) {
++        this.#buffer = '';
++        this.#stream.write('n\n');
++        continue;
++      }
++
+       return cleanOutput(raw, cmd);
+     }
+   }
+@@ -181,29 +188,7 @@ async function openSession() {
+         });
+ 
+         try {
+-          // Aguarda prompt inicial e usa o output para detectar o modo
+-          const initialPrompt = await sess.waitFor(PROMPT_RE, 15_000);
+-
+-          // Nesta OLT, os comandos relevantes ficam disponiveis apos "enable".
+-          if (!PROMPT_PRIV.test(initialPrompt)) {
+-            sess.write('enable\n');
+-            const afterEnable = await sess.waitFor(PROMPT_RE, 10_000);
+-            if (PASSWORD_RE.test(sanitizeOutput(afterEnable).trim())) {
+-              if (!config.OLT_ENABLE_PASSWORD) {
+-                throw Object.assign(
+-                  new Error('A OLT solicitou senha para o comando enable. Configure OLT_ENABLE_PASSWORD no .env.'),
+-                  { statusCode: 503 }
+-                );
+-              }
+-              sess.write(config.OLT_ENABLE_PASSWORD + '\n');
+-              await sess.waitFor(PROMPT_PRIV, 10_000);
+-            } else if (!PROMPT_PRIV.test(afterEnable)) {
+-              await sess.waitFor(PROMPT_PRIV, 10_000);
+-            }
+-          }
+-
+-          // Desabilita paginação
+-          await sess.sendLine('screen-length 0 temporary', 10_000);
++          await initializeShellSession(sess);
+ 
+           resolve(sess);
+         } catch (e) {
+@@ -304,10 +289,18 @@ export function openShellForTerminal() {
+   return new Promise((resolve, reject) => {
+     const client = new Client();
+     client.on('ready', () => {
+-      client.shell({ term: 'vt100', cols: 220, rows: 50 }, (err, stream) => {
++      client.shell({ term: 'vt100', cols: 220, rows: 50 }, async (err, stream) => {
+         if (err) return reject(err);
+-        stream.on('close', () => client.end());
+-        resolve({ stream, client });
++        try {
++          const sess = new OLTSession(stream);
++          await initializeShellSession(sess);
++          stream.on('close', () => client.end());
++          resolve({ stream, client });
++        } catch (error) {
++          stream.end();
++          client.end();
++          reject(error);
++        }
+       });
+     });
+     client.on('error', reject);
+@@ -316,6 +309,46 @@ export function openShellForTerminal() {
+ }
+ 
+ // ── helpers ───────────────────────────────────────────────────────────────────
++async function initializeShellSession(sess) {
++  await ensurePrivilegedPrompt(sess);
++  await sess.sendLine('screen-length 0 temporary', 10_000);
++  await runBootstrapCommands(sess);
++}
++
++async function ensurePrivilegedPrompt(sess) {
++  const initialPrompt = await sess.waitFor(PROMPT_RE, 15_000);
++
++  if (PROMPT_PRIV.test(initialPrompt)) return;
++
++  sess.write('enable\n');
++  const afterEnable = await sess.waitFor(PROMPT_RE, 10_000);
++  if (PASSWORD_RE.test(sanitizeOutput(afterEnable).trim())) {
++    if (!config.OLT_ENABLE_PASSWORD) {
++      throw Object.assign(
++        new Error('A OLT solicitou senha para o comando enable. Configure OLT_ENABLE_PASSWORD no .env.'),
++        { statusCode: 503 }
++      );
++    }
++    sess.write(config.OLT_ENABLE_PASSWORD + '\n');
++    await sess.waitFor(PROMPT_PRIV, 10_000);
++    return;
++  }
++
++  if (!PROMPT_PRIV.test(afterEnable)) {
++    await sess.waitFor(PROMPT_PRIV, 10_000);
++  }
++}
++
++async function runBootstrapCommands(sess) {
++  for (const command of config.OLT_SESSION_BOOTSTRAP_COMMANDS) {
++    try {
++      await sess.sendLine(command, 10_000);
++    } catch (error) {
++      console.warn(`[OLT bootstrap] falha ao executar "${command}": ${error.message}`);
++    }
++  }
++}
++
+ function cleanOutput(raw, cmd) {
+   const normalized = sanitizeOutput(raw);
+   return normalized
+diff --git a/frontend/src/App.tsx b/frontend/src/App.tsx
+index 8fb7809..1f9d7f8 100644
+--- a/frontend/src/App.tsx
++++ b/frontend/src/App.tsx
+@@ -6,14 +6,16 @@ import { Dashboard } from "./pages/Dashboard";
+ import { Autofind } from "./pages/Autofind";
+ import { Provision } from "./pages/Provision";
+ import { ONTs } from "./pages/ONTs";
+-import { ONTDetail } from "./pages/ONTDetail";
+ import { Alarms } from "./pages/Alarms";
+ import { Terminal } from "./pages/Terminal";
+ import { AuditLogPage } from "./pages/AuditLog";
+ import { Users } from "./pages/Users";
++import { TemplatesPage } from "./pages/Templates";
++import { useUISettings } from "./context/UISettingsContext";
+ 
+ export default function App() {
+   const { user, login, logout, isAuthenticated } = useAuth();
++  const { t } = useUISettings();
+ 
+   return (
+     <BrowserRouter>
+@@ -21,7 +23,7 @@ export default function App() {
+         href="#main-content"
+         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-ink-900 focus:shadow-panel"
+       >
+-        Pular para o conteudo
++        {t("skip.content")}
+       </a>
+       <Routes>
+         <Route path="/login" element={
+@@ -29,19 +31,17 @@ export default function App() {
+         } />
+ 
+         <Route element={
+-          isAuthenticated && user
+-            ? <Layout user={user} onLogout={logout} />
+-            : <Navigate to="/login" replace />
++          isAuthenticated && user ? <Layout user={user} onLogout={logout} /> : <Navigate to="/login" replace />
+         }>
+           <Route path="/" element={<Dashboard />} />
++          <Route path="/alarms" element={<Alarms />} />
++          <Route path="/onts" element={<ONTs />} />
+           <Route path="/autofind" element={<Autofind />} />
+           <Route path="/provision" element={<Provision />} />
+-          <Route path="/onts" element={<ONTs />} />
+-          <Route path="/onts/:slot/:port/:ont_id" element={<ONTDetail />} />
+-          <Route path="/alarms" element={<Alarms />} />
+           <Route path="/terminal" element={<Terminal />} />
+           <Route path="/audit" element={<AuditLogPage />} />
+           {user?.is_admin && <Route path="/users" element={<Users />} />}
++          {user?.is_admin && <Route path="/templates" element={<TemplatesPage />} />}
+         </Route>
+ 
+         <Route path="*" element={<Navigate to="/" replace />} />
+diff --git a/frontend/src/api/client.ts b/frontend/src/api/client.ts
+index d682dde..214cbd6 100644
+--- a/frontend/src/api/client.ts
++++ b/frontend/src/api/client.ts
+@@ -40,6 +40,10 @@ export const getOltVersion = () => api.get("/olt/version");
+ export const getBoards = () => api.get("/olt/boards");
+ export const getAlarms = () => api.get("/olt/alarms");
+ export const getAutofind = () => api.get("/olt/autofind");
++export const getProvisionTemplate = (port: number, slot = 1) =>
++  api.get("/olt/provision-template", { params: { port, slot } });
++export const getProvisionTemplates = (slot = 1) =>
++  api.get("/olt/provision-templates", { params: { slot } });
+ export const getOnts = (slot?: number, port?: number) => {
+   const params: Record<string, number> = {};
+   if (slot !== undefined) params.slot = slot;
+@@ -59,6 +63,14 @@ export const getOntWan = (slot: number, port: number, ontId: number) =>
+   api.get(`/olt/onts/${slot}/${port}/${ontId}/wan`);
+ export const getOntOptical = (slot: number, port: number, ontId: number) =>
+   api.get(`/olt/onts/${slot}/${port}/${ontId}/optical`);
++export const getTemplateCatalog = () => api.get("/olt/template-catalog");
++export const createTemplateCatalogItem = (data: object) => api.post("/olt/template-catalog", data);
++export const updateTemplateCatalogItem = (id: number, data: object) => api.put(`/olt/template-catalog/${id}`, data);
++export const deleteTemplateCatalogItem = (id: number) => api.delete(`/olt/template-catalog/${id}`);
++export const getTemplateBindings = () => api.get("/olt/template-bindings");
++export const createTemplateBinding = (data: object) => api.post("/olt/template-bindings", data);
++export const updateTemplateBinding = (id: number, data: object) => api.put(`/olt/template-bindings/${id}`, data);
++export const deleteTemplateBinding = (id: number) => api.delete(`/olt/template-bindings/${id}`);
+ 
+ // ── Audit ─────────────────────────────────────────────────────────────────────
+ export const getAuditLogs = (params?: object) => api.get("/audit/logs", { params });
+diff --git a/frontend/src/components/Layout.tsx b/frontend/src/components/Layout.tsx
+index 91b657e..ea887e0 100644
+--- a/frontend/src/components/Layout.tsx
++++ b/frontend/src/components/Layout.tsx
+@@ -1,7 +1,8 @@
+ import { Outlet } from "react-router-dom";
+-import { useState } from "react";
++import { useEffect, useState } from "react";
+ import { Sidebar } from "./Sidebar";
+ import { AuthToken } from "../types";
++import { useUISettings } from "../context/UISettingsContext";
+ 
+ interface Props {
+   user: AuthToken;
+@@ -10,36 +11,102 @@ interface Props {
+ 
+ export function Layout({ user, onLogout }: Props) {
+   const [sidebarOpen, setSidebarOpen] = useState(false);
++  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
++  const { locale, setLocale, t } = useUISettings();
++
++  useEffect(() => {
++    const saved = window.localStorage.getItem("olt_sidebar_collapsed");
++    if (saved === "1") {
++      setSidebarCollapsed(true);
++    }
++  }, []);
++
++  useEffect(() => {
++    window.localStorage.setItem("olt_sidebar_collapsed", sidebarCollapsed ? "1" : "0");
++  }, [sidebarCollapsed]);
+ 
+   return (
+-    <div className="relative flex min-h-screen overflow-hidden bg-transparent text-ink-900">
+-      <div className="pointer-events-none absolute inset-0">
+-        <div className="absolute left-[-8rem] top-[-6rem] h-72 w-72 rounded-full bg-brand-200/45 blur-3xl" />
+-        <div className="absolute bottom-[-10rem] right-[-6rem] h-80 w-80 rounded-full bg-brand-500/10 blur-3xl" />
+-      </div>
+-      <Sidebar user={user} onLogout={onLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+-      <main id="main-content" className="relative flex-1 overflow-auto">
+-        <div className="mx-auto max-w-[1600px] px-4 py-4 md:px-6 md:py-6">
+-          <div className="mb-4 flex items-center justify-between md:hidden">
+-            <button
+-              onClick={() => setSidebarOpen(true)}
+-              className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-ink-800 shadow-panel backdrop-blur"
+-              aria-label="Abrir menu"
+-            >
+-              <span className="flex flex-col gap-1.5">
+-                <span className="block h-0.5 w-5 rounded-full bg-current" />
+-                <span className="block h-0.5 w-5 rounded-full bg-current" />
+-                <span className="block h-0.5 w-5 rounded-full bg-current" />
++    <div className="min-h-dvh bg-transparent text-ink-900 md:flex">
++      <Sidebar
++        user={user}
++        onLogout={onLogout}
++        open={sidebarOpen}
++        onClose={() => setSidebarOpen(false)}
++        collapsed={sidebarCollapsed}
++        onToggleCollapse={() => setSidebarCollapsed((current) => !current)}
++      />
++
++      <div className="min-w-0 flex-1">
++        <header className="sticky top-0 z-30 border-b border-ink-200/80 bg-[rgba(247,249,251,0.94)] backdrop-blur-xl">
++          <div className="flex h-[4.5rem] items-center gap-4 px-3 sm:px-5 xl:px-6">
++            <div className="flex items-center gap-2 md:hidden">
++              <button
++                className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-ink-500 transition hover:bg-brand-50 hover:text-brand-700"
++                onClick={() => setSidebarOpen((current) => !current)}
++                aria-label="Abrir menu"
++              >
++                <span className="material-symbols-outlined text-[20px]">menu</span>
++              </button>
++
++              <div className="flex items-center gap-3">
++                <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-brand-200 bg-white text-brand-700 shadow-sm">
++                  <span className="material-symbols-outlined text-[18px]">router</span>
++                </div>
++                <div>
++                  <div className="font-display text-lg font-semibold tracking-[-0.02em] text-ink-900">{t("app.title")}</div>
++                  <div className="text-xs text-ink-500">{t("app.subtitle")}</div>
++                </div>
++              </div>
++            </div>
++
++            <div className="hidden flex-1 md:block">
++            <label className="relative block max-w-xl xl:max-w-2xl">
++              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-ink-400">
++                <span className="material-symbols-outlined text-[18px]">search</span>
+               </span>
+-            </button>
+-            <div className="text-right">
+-              <div className="text-[11px] uppercase tracking-[0.22em] text-ink-400">OLT Manager</div>
+-              <div className="text-sm font-semibold text-ink-900">MA5800-X2</div>
++              <input
++                type="text"
++                className="h-11 w-full rounded-xl border border-ink-200 bg-white/95 pl-11 pr-4 text-sm text-ink-800 outline-none transition placeholder:text-ink-400 focus:border-brand-200 focus:bg-white focus:ring-4 focus:ring-brand-100/50"
++                placeholder={t("search.placeholder")}
++              />
++            </label>
++            </div>
++
++            <div className="ml-auto flex items-center gap-2 sm:gap-3">
++              <div className="hidden overflow-hidden rounded-xl border border-ink-200 bg-white sm:flex">
++                <button
++                  onClick={() => setLocale("en")}
++                  className={`px-3 py-2 text-xs font-medium ${locale === "en" ? "bg-brand-50 text-brand-700" : "text-ink-500"}`}
++                >
++                  EN
++                </button>
++                <button
++                  onClick={() => setLocale("pt")}
++                  className={`border-l border-ink-200 px-3 py-2 text-xs font-medium ${locale === "pt" ? "bg-brand-50 text-brand-700" : "text-ink-500"}`}
++                >
++                  PT
++                </button>
++              </div>
++              <div className="hidden rounded-xl border border-ink-200 bg-white px-3 py-2 sm:block">
++                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">{t("session.label")}</div>
++                <div className="text-sm font-semibold text-ink-800">{user.full_name || user.username}</div>
++              </div>
++              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-ink-200 bg-white text-sm font-medium text-ink-700">
++                {user.username.charAt(0).toUpperCase()}
++              </div>
+             </div>
+           </div>
+-          <Outlet />
+-        </div>
+-      </main>
++        </header>
++
++        <main
++          id="main-content"
++          className="min-h-[calc(100dvh-4.25rem)] flex-1 overflow-x-hidden px-4 py-5 sm:px-6 xl:px-8"
++        >
++          <div className="pb-10">
++            <Outlet />
++          </div>
++        </main>
++      </div>
+     </div>
+   );
+ }
+diff --git a/frontend/src/components/Sidebar.tsx b/frontend/src/components/Sidebar.tsx
+index 53285f9..0a71ed3 100644
+--- a/frontend/src/components/Sidebar.tsx
++++ b/frontend/src/components/Sidebar.tsx
+@@ -1,27 +1,49 @@
+ import { NavLink, useNavigate } from "react-router-dom";
+ import { AuthToken } from "../types";
++import { useUISettings } from "../context/UISettingsContext";
+ 
+ interface Props {
+   user: AuthToken;
+   onLogout: () => void;
+   open: boolean;
+   onClose: () => void;
++  collapsed: boolean;
++  onToggleCollapse: () => void;
+ }
+ 
+-const links = [
+-  { to: "/", label: "Dashboard", icon: "DB" },
+-  { to: "/autofind", label: "Autofind", icon: "AF" },
+-  { to: "/provision", label: "Provisionar ONT", icon: "PV" },
+-  { to: "/onts", label: "ONTs Registradas", icon: "ON" },
+-  { to: "/alarms", label: "Alarmes", icon: "AL" },
+-  { to: "/terminal", label: "Terminal", icon: "SH" },
+-  { to: "/audit", label: "Auditoria", icon: "LG" },
+-];
++export function Sidebar({ user, onLogout, open, onClose, collapsed, onToggleCollapse }: Props) {
++  const navigate = useNavigate();
++  const { t } = useUISettings();
+ 
+-const adminLinks = [{ to: "/users", label: "Usuários", icon: "AD" }];
++  const primaryLinks = [
++    { to: "/", label: t("nav.dashboard"), icon: "dashboard" },
++    { to: "/alarms", label: t("nav.alarms"), icon: "warning" },
++  ];
+ 
+-export function Sidebar({ user, onLogout, open, onClose }: Props) {
+-  const navigate = useNavigate();
++  const groups = [
++    {
++      title: t("group.operations"),
++      items: [
++        { to: "/onts", label: t("nav.onts"), icon: "lan" },
++        { to: "/autofind", label: t("nav.autofind"), icon: "travel_explore" },
++        { to: "/provision", label: t("nav.provision"), icon: "deployed_code" },
++      ],
++    },
++    {
++      title: t("group.management"),
++      items: [
++        { to: "/terminal", label: t("nav.terminal"), icon: "terminal" },
++        { to: "/audit", label: t("nav.audit"), icon: "history" },
++      ],
++    },
++    {
++      title: t("group.admin"),
++      items: [
++        { to: "/users", label: t("nav.users"), icon: "group" },
++        { to: "/templates", label: "Templates", icon: "assignment" }
++      ],
++    },
++  ];
+ 
+   const handleLogout = () => {
+     onLogout();
+@@ -29,92 +51,120 @@ export function Sidebar({ user, onLogout, open, onClose }: Props) {
+   };
+ 
+   const linkClass = ({ isActive }: { isActive: boolean }) =>
+-    `group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all ${
++    `group flex items-center rounded-xl border px-3 py-2.5 text-sm transition ${
+       isActive
+-        ? "bg-white/14 text-white shadow-lg shadow-black/10"
+-        : "text-brand-100/80 hover:bg-white/8 hover:text-white"
+-    }`;
++        ? "border-brand-200 bg-white text-brand-700 shadow-sm"
++        : "border-transparent text-ink-500 hover:border-ink-200 hover:bg-white/80 hover:text-ink-700"
++    } ${collapsed ? "justify-center gap-0" : "gap-3"}`;
++
++  const renderItem = (item: { to: string; label: string; icon: string }) => (
++    <NavLink
++      key={`${item.to}-${item.label}`}
++      to={item.to}
++      end={item.to === "/" && item.icon === "dashboard"}
++      className={linkClass}
++      onClick={onClose}
++      aria-label={item.label}
++      title={collapsed ? item.label : undefined}
++    >
++      {({ isActive }) => (
++        <>
++          <span className={`material-symbols-outlined text-[18px] ${isActive ? "text-brand-600" : "text-ink-400 group-hover:text-ink-600"}`}>
++            {item.icon}
++          </span>
++          {!collapsed && <span className={`${isActive ? "font-medium" : "font-normal"}`}>{item.label}</span>}
++        </>
++      )}
++    </NavLink>
++  );
+ 
+   return (
+     <>
+       <div
+-        className={`fixed inset-0 z-30 bg-ink-900/45 backdrop-blur-sm transition md:hidden ${
++        className={`fixed inset-0 z-30 bg-ink-900/25 backdrop-blur-sm transition md:hidden ${
+           open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+         }`}
+         onClick={onClose}
+       />
+-      <aside className={`fixed inset-y-3 left-3 z-40 flex min-h-[calc(100vh-1.5rem)] w-[18rem] flex-col overflow-hidden rounded-[2rem] border border-white/8 bg-gradient-to-b from-[#141824] via-[#1c2231] to-[#20263a] shadow-panel transition-transform duration-300 md:relative md:inset-auto md:z-auto md:m-3 md:translate-x-0 ${
+-        open ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
+-      }`}>
+-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.12),_transparent_28rem)]" />
+-        <div className="relative border-b border-white/10 px-6 py-6">
+-          <div className="mb-4 flex items-center justify-between">
+-            <div className="inline-flex items-center rounded-full border border-white/12 bg-white/8 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-100/70">
+-              Control Surface
++
++      <aside
++        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-ink-200/80 bg-[rgba(249,251,252,0.98)] backdrop-blur-xl transition-all duration-300 md:sticky md:top-0 md:z-20 md:h-dvh md:translate-x-0 ${
++          collapsed ? "w-[5.25rem]" : "w-[16rem]"
++        } ${
++          open ? "translate-x-0" : "-translate-x-full"
++        }`}
++      >
++        <div className={`relative flex h-[4.5rem] items-center border-b border-ink-200/80 ${collapsed ? "justify-center px-2" : "px-5 pr-10"}`}>
++          <div className={`flex min-w-0 items-center ${collapsed ? "justify-center" : "gap-3"}`}>
++            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-200 bg-white text-brand-700 shadow-sm">
++              <span className="material-symbols-outlined text-[18px]">router</span>
+             </div>
+-            <button
+-              onClick={onClose}
+-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-brand-100/70 md:hidden"
+-              aria-label="Fechar menu"
+-            >
+-              ×
+-            </button>
++            {!collapsed && (
++              <div className="min-w-0">
++                <div className="font-display truncate text-[1.05rem] font-semibold tracking-[-0.02em] text-ink-900">{t("app.title")}</div>
++                <div className="line-clamp-2 text-[11px] leading-4 text-ink-500">{t("app.subtitle")}</div>
++              </div>
++            )}
+           </div>
+-          <h1 className="text-2xl font-bold leading-tight text-white">OLT Manager</h1>
+-          <p className="mt-1 text-sm text-brand-100/65">Huawei MA5800-X2 operations</p>
++
++          <button
++            onClick={onToggleCollapse}
++            aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
++            title={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
++            className={`absolute top-1/2 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border border-ink-200 bg-white text-ink-400 transition hover:border-brand-200 hover:text-brand-600 md:inline-flex ${
++              collapsed ? "right-2" : "right-3"
++            }`}
++          >
++            <span className="material-symbols-outlined text-[18px]">
++              {collapsed ? "keyboard_double_arrow_right" : "keyboard_double_arrow_left"}
++            </span>
++          </button>
+         </div>
+ 
+-        <nav className="relative flex-1 space-y-1 px-3 py-4">
+-          {links.map((l) => (
+-            <NavLink key={l.to} to={l.to} end={l.to === "/"} className={linkClass} onClick={onClose}>
+-              {({ isActive }) => (
+-                <>
+-                  <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[11px] font-semibold tracking-[0.18em] ${
+-                    isActive
+-                      ? "border-white/20 bg-white/12 text-white"
+-                      : "border-white/8 bg-white/5 text-brand-100/70 group-hover:border-white/16 group-hover:text-white"
+-                  }`}>
+-                    {l.icon}
+-                  </span>
+-                  <span>{l.label}</span>
+-                </>
++        <div className="flex-1 overflow-y-auto">
++          <div className={`border-b border-ink-200/80 px-3 py-3 ${collapsed ? "px-2.5" : ""}`}>
++            <div className="space-y-1.5">{primaryLinks.map(renderItem)}</div>
++          </div>
++
++          {groups
++            .map((group) =>
++              group.title === t("group.admin") && !user.is_admin
++                ? { ...group, items: [] }
++                : group
++            )
++            .filter((group) => group.items.length > 0)
++            .map((group) => (
++            <div key={group.title} className={`border-b border-ink-200/70 px-3 py-4 ${collapsed ? "px-2.5" : ""}`}>
++              {!collapsed && (
++                <div className="mb-3 px-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">{group.title}</div>
+               )}
+-            </NavLink>
++              <div className="space-y-1.5">{group.items.map(renderItem)}</div>
++            </div>
+           ))}
++        </div>
+ 
+-          {user.is_admin && (
+-            <>
+-              <div className="px-4 pb-2 pt-4 text-[11px] uppercase tracking-[0.24em] text-brand-100/45">Admin</div>
+-              {adminLinks.map((l) => (
+-                <NavLink key={l.to} to={l.to} className={linkClass} onClick={onClose}>
+-                  {({ isActive }) => (
+-                    <>
+-                      <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-[11px] font-semibold tracking-[0.18em] ${
+-                        isActive
+-                          ? "border-white/20 bg-white/12 text-white"
+-                          : "border-white/8 bg-white/5 text-brand-100/70 group-hover:border-white/16 group-hover:text-white"
+-                      }`}>
+-                        {l.icon}
+-                      </span>
+-                      <span>{l.label}</span>
+-                    </>
+-                  )}
+-                </NavLink>
+-              ))}
+-            </>
++        <div className={`mt-auto border-t border-ink-200/80 px-3 py-3 ${collapsed ? "px-2.5" : ""}`}>
++          {!collapsed && (
++            <div className="mb-3 rounded-xl border border-ink-200/80 bg-white px-3 py-3 shadow-sm">
++              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">Usuário ativo</div>
++              <div className="mt-2 text-sm font-semibold text-ink-800">{user.full_name || user.username}</div>
++              <div className="mt-1 text-xs uppercase tracking-[0.16em] text-ink-400">
++                {user.is_admin ? "Admin" : "Operador"}
++              </div>
++            </div>
+           )}
+-        </nav>
+-        <div className="relative border-t border-white/10 px-4 py-4">
+-          <div className="panel-muted mb-3 px-4 py-3 text-sm text-brand-100/70">
+-            <div className="font-medium text-white">{user.full_name}</div>
+-            <div className="mt-1 text-xs uppercase tracking-[0.18em] text-brand-100/45">{user.username}{user.is_admin ? " / admin" : ""}</div>
+-          </div>
+           <button
+             onClick={handleLogout}
+-            className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-medium text-brand-100/80 transition hover:bg-white/10 hover:text-white"
++            aria-label={t("logout")}
++            title={collapsed ? t("logout") : undefined}
++            className={`flex w-full items-center rounded-xl px-3 py-2.5 text-sm text-ink-500 transition hover:bg-white hover:text-ink-700 ${
++              collapsed ? "justify-center gap-0" : "gap-3"
++            }`}
+           >
+-            Encerrar sessão
++            <span className="material-symbols-outlined text-[18px]">logout</span>
++            {!collapsed && t("logout")}
+           </button>
++          {!collapsed && <div className="mt-3 px-1 text-[11px] text-ink-400">v0.1.0</div>}
+         </div>
+       </aside>
+     </>
+diff --git a/frontend/src/components/StatusBadge.tsx b/frontend/src/components/StatusBadge.tsx
+index 55e3110..0f8b035 100644
+--- a/frontend/src/components/StatusBadge.tsx
++++ b/frontend/src/components/StatusBadge.tsx
+@@ -26,7 +26,7 @@ export function StatusBadge({ value }: Props) {
+   const key = value?.toLowerCase() ?? "";
+   const color = STATE_COLORS[key] ?? "border border-ink-200 bg-white/70 text-ink-600";
+   return (
+-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em] ${color}`}>
++    <span className={`font-mono inline-flex items-center rounded-full px-2.5 py-1 text-[11px] uppercase tracking-[0.16em] ${color}`}>
+       {value || "—"}
+     </span>
+   );
+diff --git a/frontend/src/index.css b/frontend/src/index.css
+index 343efbf..52ae0bd 100644
+--- a/frontend/src/index.css
++++ b/frontend/src/index.css
+@@ -1,4 +1,4 @@
+-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
++@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&family=Schibsted+Grotesk:wght@600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap");
+ 
+ @tailwind base;
+ @tailwind components;
+@@ -6,60 +6,117 @@
+ 
+ @layer base {
+   :root {
+-    color: #171b24;
++    --brand-50: 239 243 248;
++    --brand-100: 224 232 243;
++    --brand-200: 196 209 228;
++    --brand-300: 157 177 208;
++    --brand-400: 106 135 180;
++    --brand-500: 66 98 148;
++    --brand-600: 48 76 118;
++    --brand-700: 39 63 97;
++    --brand-800: 31 50 78;
++    --brand-900: 24 40 63;
++    --brand-950: 19 31 49;
++
++    --ink-50: 248 250 251;
++    --ink-100: 238 242 246;
++    --ink-200: 217 225 234;
++    --ink-300: 183 194 207;
++    --ink-400: 135 149 167;
++    --ink-500: 102 116 136;
++    --ink-600: 77 90 107;
++    --ink-700: 58 69 84;
++    --ink-800: 35 43 56;
++    --ink-900: 24 31 43;
++
++    --surface: 255 255 255;
++    --surface-muted: 248 250 252;
++    --surface-strong: 242 245 248;
++    --line: 215 223 232;
++    --line-strong: 191 202 216;
++    --success: 39 143 96;
++    --warning: 194 134 18;
++    --danger: 196 83 68;
++
++    color: rgb(var(--ink-900));
+     background:
+-      radial-gradient(circle at top left, rgba(98, 137, 255, 0.14), transparent 30rem),
+-      radial-gradient(circle at bottom right, rgba(69, 104, 244, 0.08), transparent 28rem),
+-      linear-gradient(180deg, #fafbff 0%, #f1f4fb 100%);
++      radial-gradient(circle at top left, rgba(66, 98, 148, 0.08), transparent 28rem),
++      linear-gradient(180deg, rgb(245, 247, 249) 0%, rgb(240, 243, 246) 100%);
+   }
+ 
+   html {
+-    font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
++    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+   }
+ 
+   body {
+     min-height: 100vh;
+     background: transparent;
+-    color: #171b24;
++    color: rgb(var(--ink-900));
++  }
++
++  h1, h2, h3, .font-display {
++    font-family: "Schibsted Grotesk", "Public Sans", ui-sans-serif, system-ui, sans-serif;
++  }
++
++  .material-symbols-outlined {
++    font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+   }
+ 
+   ::selection {
+-    background: rgba(69, 104, 244, 0.18);
++    background: rgba(66, 98, 148, 0.18);
+   }
+ }
+ 
+ @layer components {
+   .input {
+-    @apply w-full rounded-2xl px-4 py-3 text-sm shadow-sm outline-none transition duration-200 focus:ring-4 focus:ring-brand-100;
+-    border: 1px solid rgba(255, 255, 255, 0.6);
+-    background: rgba(255, 255, 255, 0.85);
+-    color: #171b24;
++    @apply w-full rounded-xl px-4 py-3 text-sm outline-none transition duration-200 focus:ring-4 focus:ring-brand-100/50;
++    border: 1px solid rgb(var(--line));
++    background: rgb(var(--surface) / 0.96);
++    color: rgb(var(--ink-900));
++    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+   }
+ 
+   .input::placeholder {
+-    color: #8f9bb7;
++    color: rgb(var(--ink-400));
+   }
+ 
+   .panel {
+-    @apply rounded-[1.5rem] shadow-panel backdrop-blur;
+-    border: 1px solid rgba(255, 255, 255, 0.7);
+-    background: rgba(255, 255, 255, 0.82);
++    @apply rounded-[1.25rem] shadow-panel;
++    border: 1px solid rgb(var(--line) / 0.85);
++    background: rgb(var(--surface) / 0.94);
+   }
+ 
+   .panel-muted {
+-    @apply rounded-[1.25rem] backdrop-blur;
+-    border: 1px solid rgba(255, 255, 255, 0.7);
+-    background: rgba(255, 255, 255, 0.6);
++    @apply rounded-[1rem];
++    border: 1px solid rgb(var(--line) / 0.75);
++    background: rgb(var(--surface-muted) / 0.96);
+   }
+ 
+   .action-primary {
+-    @apply cursor-pointer rounded-2xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100 disabled:cursor-not-allowed disabled:bg-brand-300;
++    @apply cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100/50 disabled:cursor-not-allowed;
++    background: rgb(var(--brand-600));
++  }
++
++  .action-primary:hover {
++    background: rgb(var(--brand-700));
+   }
+ 
+   .action-secondary {
+-    @apply cursor-pointer rounded-2xl px-4 py-2.5 text-sm font-medium transition hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100;
+-    border: 1px solid #d8dce8;
+-    background: rgba(255, 255, 255, 0.7);
+-    color: #49536a;
++    @apply cursor-pointer rounded-xl px-4 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100/50;
++    border: 1px solid rgb(var(--line));
++    background: rgb(var(--surface) / 0.8);
++    color: rgb(var(--ink-700));
++  }
++
++  .action-secondary:hover {
++    background: rgb(var(--surface));
++  }
++
++  .eyebrow {
++    @apply inline-flex items-center rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.22em];
++    border: 1px solid rgb(var(--line-strong) / 0.9);
++    background: rgb(var(--surface-strong) / 0.98);
++    color: rgb(var(--brand-600));
++    font-family: "IBM Plex Mono", ui-monospace, monospace;
+   }
+ }
+diff --git a/frontend/src/main.tsx b/frontend/src/main.tsx
+index 9b67590..d57439a 100644
+--- a/frontend/src/main.tsx
++++ b/frontend/src/main.tsx
+@@ -1,10 +1,13 @@
+ import React from "react";
+ import ReactDOM from "react-dom/client";
+ import App from "./App";
++import { UISettingsProvider } from "./context/UISettingsContext";
+ import "./index.css";
+ 
+ ReactDOM.createRoot(document.getElementById("root")!).render(
+   <React.StrictMode>
+-    <App />
++    <UISettingsProvider>
++      <App />
++    </UISettingsProvider>
+   </React.StrictMode>
+ );
+diff --git a/frontend/src/pages/Autofind.tsx b/frontend/src/pages/Autofind.tsx
+index a9ee2f6..f2eeaf7 100644
+--- a/frontend/src/pages/Autofind.tsx
++++ b/frontend/src/pages/Autofind.tsx
+@@ -1,8 +1,7 @@
+ import React, { useEffect, useState } from "react";
+ import { Link } from "react-router-dom";
+-import { getAutofind, provisionOnt } from "../api/client";
+-import { AutofindONT } from "../types";
+-import { getProvisionTemplate } from "../lib/provisionTemplates";
++import { getAutofind, getProvisionTemplate, provisionOnt } from "../api/client";
++import { AutofindONT, ProvisionTemplate } from "../types";
+ 
+ export function Autofind() {
+   const [onts, setOnts] = useState<AutofindONT[]>([]);
+@@ -21,14 +20,21 @@ export function Autofind() {
+     setSuccess("");
+     try {
+       const { data } = await getAutofind();
+-      const enriched = (data.onts ?? []).map((ont: AutofindONT) => {
+-        const template = getProvisionTemplate(ont.port);
++      const enriched = await Promise.all((data.onts ?? []).map(async (ont: AutofindONT) => {
++        const response = await getProvisionTemplate(ont.port, ont.slot);
++        const template = response.data as ProvisionTemplate;
+         return {
+           ...ont,
++          template_id: template.template_id,
++          template_name: template.template_name,
+           template_vlan_id: template.vlan_id,
+           template_auto_matched: template.auto_matched,
++          template_lineprofile_id: template.lineprofile_id,
++          template_srvprofile_id: template.srvprofile_id,
++          template_user_vlan: template.user_vlan,
++          template_gemport: template.gemport,
+         };
+-      });
++      }));
+       setOnts(enriched);
+       setRaw(data.raw ?? "");
+     } catch (e: any) {
+@@ -54,8 +60,14 @@ export function Autofind() {
+   };
+ 
+   const handleDirectProvision = async (ont: AutofindONT) => {
+-    const template = getProvisionTemplate(ont.port);
+-    if (!template.auto_matched || template.vlan_id == null || template.user_vlan == null) {
++    if (
++      !ont.template_auto_matched ||
++      ont.template_vlan_id == null ||
++      ont.template_user_vlan == null ||
++      ont.template_lineprofile_id == null ||
++      ont.template_srvprofile_id == null ||
++      ont.template_gemport == null
++    ) {
+       setError(`Nao existe template automatico salvo para a PON 0/1/${ont.port}.`);
+       return;
+     }
+@@ -75,14 +87,14 @@ export function Autofind() {
+         slot: 1,
+         port: ont.port,
+         sn: ont.sn,
+-        lineprofile_id: template.lineprofile_id,
+-        srvprofile_id: template.srvprofile_id,
++        lineprofile_id: ont.template_lineprofile_id,
++        srvprofile_id: ont.template_srvprofile_id,
+         description: finalDescription,
+-        vlan_id: template.vlan_id,
+-        user_vlan: template.user_vlan,
+-        gemport: template.gemport,
++        vlan_id: ont.template_vlan_id,
++        user_vlan: ont.template_user_vlan,
++        gemport: ont.template_gemport,
+       });
+-      setSuccess(`ONT ${ont.sn} provisionada na PON 0/1/${ont.port} com VLAN ${template.vlan_id}.`);
++      setSuccess(`ONT ${ont.sn} provisionada na PON 0/1/${ont.port} com VLAN ${ont.template_vlan_id}.`);
+       setEditingSn(null);
+       setDescription("");
+       await load();
+@@ -100,10 +112,8 @@ export function Autofind() {
+       <header className="panel px-6 py-6 md:px-8">
+         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+           <div>
+-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
+-              Discovery queue
+-            </div>
+-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Autofind</h2>
++            <div className="eyebrow mb-3">Discovery queue</div>
++            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Autofind</h2>
+             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
+               ONTs detectadas pela OLT e prontas para seguir o fluxo de provisao com template automatico por PON.
+             </p>
+@@ -135,7 +145,7 @@ export function Autofind() {
+           <div className="overflow-x-auto">
+             <table className="w-full min-w-[76rem] text-sm">
+               <thead className="border-b border-ink-100 bg-white/65">
+-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
++                <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
+                   <th className="px-5 py-4">PON</th>
+                   <th className="px-5 py-4">Serial</th>
+                   <th className="px-5 py-4">Vendor</th>
+@@ -154,11 +164,11 @@ export function Autofind() {
+                       <td className="px-5 py-4 text-ink-600">{ont.vendor_id}</td>
+                       <td className="px-5 py-4">
+                         {ont.template_auto_matched ? (
+-                          <span className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-700">
+-                            VLAN {ont.template_vlan_id}
++                          <span className="font-mono inline-flex rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-brand-700">
++                            {ont.template_name ? ont.template_name : `VLAN ${ont.template_vlan_id}`}
+                           </span>
+                         ) : (
+-                          <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800">
++                          <span className="font-mono inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-amber-800">
+                             Sem template
+                           </span>
+                         )}
+@@ -170,13 +180,13 @@ export function Autofind() {
+                           <button
+                             onClick={() => startDirectProvision(ont)}
+                             disabled={!ont.template_auto_matched || actionSn === ont.sn}
+-                            className="rounded-full border border-brand-200 bg-brand-600 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white transition hover:bg-brand-700 disabled:border-brand-100 disabled:bg-brand-300"
++                            className="font-mono rounded-full border border-brand-200 bg-brand-600 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-white transition hover:bg-brand-700 disabled:border-brand-100 disabled:bg-brand-300"
+                           >
+                             Provisionar direto
+                           </button>
+                           <Link
+                             to={`/provision?sn=${ont.sn}&port=${ont.port}`}
+-                            className="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white"
++                            className="font-mono rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white"
+                           >
+                             Editar
+                           </Link>
+@@ -189,7 +199,7 @@ export function Autofind() {
+                         <td colSpan={7} className="px-5 py-5">
+                           <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                             <div>
+-                              <div className="mb-2 text-[11px] uppercase tracking-[0.2em] text-ink-400">Descricao obrigatoria</div>
++                              <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">Descricao obrigatoria</div>
+                               <label className="mb-1 block text-sm font-medium text-ink-700">Nome operacional da ONT</label>
+                               <input
+                                 type="text"
+diff --git a/frontend/src/pages/Dashboard.tsx b/frontend/src/pages/Dashboard.tsx
+index a2050ec..fc56a64 100644
+--- a/frontend/src/pages/Dashboard.tsx
++++ b/frontend/src/pages/Dashboard.tsx
+@@ -74,10 +74,8 @@ export function Dashboard() {
+       <header className="panel overflow-hidden px-6 py-6 md:px-8">
+         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+           <div>
+-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
+-              OLT Summary
+-            </div>
+-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Estado operacional da MA5800-X2</h2>
++            <div className="eyebrow mb-3">OLT Summary</div>
++            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-[3.25rem]">Estado operacional da MA5800-X2</h2>
+             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
+               Visao consolidada da OLT, com inventario de ONTs, alarmes ativos e fila de provisionamento descoberta automaticamente.
+             </p>
+@@ -241,27 +239,40 @@ function StatCard({ label, value, total, tone, link, note }: {
+   note?: string;
+ }) {
+   const tones = {
+-    emerald: "from-brand-950 via-brand-900 to-brand-800 text-white",
+-    mint: "from-brand-100 via-brand-50 to-white text-ink-900",
+-    amber: "from-amber-50 via-white to-white text-ink-900",
+-    slate: "from-ink-900 via-ink-800 to-ink-700 text-white",
++    emerald: {
++      panel: "border-emerald-200 bg-[rgba(241,250,246,0.96)]",
++      line: "bg-emerald-400/70",
++    },
++    mint: {
++      panel: "border-brand-200 bg-[rgba(245,248,252,0.96)]",
++      line: "bg-brand-400/60",
++    },
++    amber: {
++      panel: "border-amber-200 bg-[rgba(253,249,240,0.96)]",
++      line: "bg-amber-400/70",
++    },
++    slate: {
++      panel: "border-ink-200 bg-[rgba(252,253,255,0.96)]",
++      line: "bg-ink-300/85",
++    },
+   } as const;
+ 
+   const content = (
+-    <div className={`panel overflow-hidden bg-gradient-to-br ${tones[tone]} px-5 py-5`}>
++    <div className={`relative overflow-hidden rounded-[1.25rem] border px-5 py-5 shadow-panel ${tones[tone].panel}`}>
++      <div className={`absolute inset-x-0 top-0 h-1 ${tones[tone].line}`} />
+       <div className="flex items-start justify-between gap-3">
+         <div>
+-          <div className={`text-[11px] uppercase tracking-[0.2em] ${tone === "emerald" || tone === "slate" ? "text-white/55" : "text-ink-400"}`}>{label}</div>
+-          <div className="mt-4 text-4xl font-bold leading-none">
++          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{label}</div>
++          <div className="mt-4 text-4xl font-semibold leading-none text-ink-900">
+             {value}
+-            {total !== undefined && <span className={`ml-2 text-lg ${tone === "emerald" || tone === "slate" ? "text-white/45" : "text-ink-400"}`}>/ {total}</span>}
++            {total !== undefined && <span className="ml-2 text-lg text-ink-400">/ {total}</span>}
+           </div>
+         </div>
+-        <div className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${tone === "emerald" || tone === "slate" ? "bg-white/10 text-white/70" : "bg-ink-900/5 text-ink-500"}`}>
++        <div className="font-mono rounded-full border border-white/80 bg-white/85 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-ink-500">
+           Live
+         </div>
+       </div>
+-      {note && <div className={`mt-5 text-sm ${tone === "emerald" || tone === "slate" ? "text-white/70" : "text-ink-500"}`}>{note}</div>}
++      {note && <div className="mt-5 text-sm text-ink-500">{note}</div>}
+     </div>
+   );
+ 
+@@ -273,11 +284,11 @@ function Section({ title, subtitle, children, link }: { title: string; subtitle?
+     <section className="panel px-6 py-5 md:px-7">
+       <div className="mb-5 flex items-start justify-between gap-4">
+         <div>
+-          <h3 className="text-lg font-bold text-ink-900">{title}</h3>
++          <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-ink-900">{title}</h3>
+           {subtitle && <p className="mt-1 text-sm leading-6 text-ink-500">{subtitle}</p>}
+         </div>
+         {link && (
+-          <Link to={link} className="rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white">
++          <Link to={link} className="font-mono rounded-full border border-ink-200 bg-white/80 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white">
+             Ver tudo
+           </Link>
+         )}
+diff --git a/frontend/src/pages/Provision.tsx b/frontend/src/pages/Provision.tsx
+index b73a02e..f1e86c6 100644
+--- a/frontend/src/pages/Provision.tsx
++++ b/frontend/src/pages/Provision.tsx
+@@ -1,8 +1,7 @@
+ import { useState, FormEvent, useEffect } from "react";
+ import { useSearchParams, useNavigate } from "react-router-dom";
+-import { provisionOnt } from "../api/client";
+-import { ProvisionForm } from "../types";
+-import { getProvisionTemplate } from "../lib/provisionTemplates";
++import { getProvisionTemplate, provisionOnt } from "../api/client";
++import { ProvisionForm, ProvisionTemplate } from "../types";
+ 
+ const DEFAULT: ProvisionForm = {
+   slot: 1, port: 0, sn: "", lineprofile_id: 20, srvprofile_id: 20,
+@@ -22,6 +21,7 @@ export function Provision() {
+   const [error, setError] = useState<string | null>(null);
+   const [result, setResult] = useState<{ ont_id: number; raw: Record<string, string> } | null>(null);
+   const [templateHint, setTemplateHint] = useState<string>("");
++  const [resolvedTemplate, setResolvedTemplate] = useState<ProvisionTemplate | null>(null);
+ 
+   const set = (field: keyof ProvisionForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
+     const val = e.target.type === "number" ? Number(e.target.value) : e.target.value;
+@@ -29,22 +29,32 @@ export function Provision() {
+   };
+ 
+   useEffect(() => {
+-    const template = getProvisionTemplate(form.port);
+-    setForm((current) => {
+-      const next = { ...current };
+-      next.slot = 1;
+-      next.lineprofile_id = template.lineprofile_id;
+-      next.srvprofile_id = template.srvprofile_id;
+-      next.gemport = template.gemport;
+-      if (template.vlan_id != null) next.vlan_id = template.vlan_id;
+-      if (template.user_vlan != null) next.user_vlan = template.user_vlan;
+-      return next;
+-    });
+-    setTemplateHint(
+-      template.auto_matched
+-        ? `Template aplicado para PON 0/1/${form.port}: VLAN ${template.vlan_id}, line profile ${template.lineprofile_id}, service profile ${template.srvprofile_id}, GEM ${template.gemport}.`
+-        : `Sem template salvo para a PON 0/1/${form.port}. Ajuste VLAN e perfis antes de enviar.`
+-    );
++    const loadTemplate = async () => {
++      try {
++        const { data } = await getProvisionTemplate(form.port, 1);
++        const template = data as ProvisionTemplate;
++        setResolvedTemplate(template);
++        setForm((current) => ({
++          ...current,
++          slot: 1,
++          lineprofile_id: template.lineprofile_id ?? current.lineprofile_id,
++          srvprofile_id: template.srvprofile_id ?? current.srvprofile_id,
++          gemport: template.gemport ?? current.gemport,
++          vlan_id: template.vlan_id ?? current.vlan_id,
++          user_vlan: template.user_vlan ?? current.user_vlan,
++        }));
++        setTemplateHint(
++          template.auto_matched
++            ? `Template aplicado para PON 0/1/${form.port}: VLAN ${template.vlan_id}, line profile ${template.lineprofile_id}, service profile ${template.srvprofile_id}, GEM ${template.gemport}.`
++            : `Sem template salvo para a PON 0/1/${form.port}. Ajuste VLAN e perfis antes de enviar.`
++        );
++      } catch {
++        setResolvedTemplate(null);
++        setTemplateHint(`Não foi possível carregar o template da PON 0/1/${form.port}.`);
++      }
++    };
++
++    loadTemplate();
+   }, [form.port]);
+ 
+   const handleSubmit = async (e: FormEvent) => {
+@@ -67,12 +77,10 @@ export function Provision() {
+     return (
+       <div className="mx-auto max-w-4xl space-y-5">
+         <div className="panel overflow-hidden px-6 py-6 md:px-8">
+-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+-            <div>
+-              <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
+-                Provision completed
+-              </div>
+-              <h2 className="text-3xl font-bold text-ink-900">ONT provisionada com sucesso</h2>
++        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
++          <div>
++              <div className="eyebrow mb-3">Provision completed</div>
++              <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900">ONT provisionada com sucesso</h2>
+               <p className="mt-2 text-sm text-ink-500">
+                 ONT ID {result.ont_id} atribuida para SN <span className="font-mono text-ink-800">{form.sn}</span> na PON 0/{form.slot}/{form.port}.
+               </p>
+@@ -109,17 +117,15 @@ export function Provision() {
+       <header className="panel px-6 py-6 md:px-8">
+         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+           <div>
+-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
+-              Provision workflow
+-            </div>
+-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Provisionar ONT</h2>
++            <div className="eyebrow mb-3">Provision workflow</div>
++            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Provisionar ONT</h2>
+             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
+               Fluxo operacional para registrar a ONT, aplicar native VLAN e criar o service-port com base no template da PON.
+             </p>
+           </div>
+ 
+           <div className="panel-muted min-w-[19rem] px-4 py-4">
+-            <div className="text-[11px] uppercase tracking-[0.2em] text-ink-400">Contexto ativo</div>
++            <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">Contexto ativo</div>
+             <div className="mt-2 text-sm font-medium text-ink-900">PON 0/1/{form.port}</div>
+             <div className="mt-1 font-mono text-xs text-ink-500">{form.sn || "SN aguardando entrada"}</div>
+           </div>
+@@ -187,6 +193,11 @@ export function Provision() {
+ 
+         <div className="space-y-6">
+           <FormPanel title="Template aplicado" subtitle="Esses valores sao herdados da PON, mas ainda podem ser ajustados antes do envio.">
++            {resolvedTemplate?.template_name && (
++              <div className="rounded-[1.25rem] border border-brand-200 bg-brand-50/60 px-4 py-3 text-sm text-brand-800">
++                Template ativo: <span className="font-semibold">{resolvedTemplate.template_name}</span>
++              </div>
++            )}
+             <div className="grid gap-4 sm:grid-cols-2">
+               <MetricField label="Line profile" value={form.lineprofile_id} />
+               <MetricField label="Service profile" value={form.srvprofile_id} />
+@@ -229,7 +240,7 @@ function FormPanel({ title, subtitle, children }: { title: string; subtitle?: st
+   return (
+     <section className="panel px-6 py-5">
+       <div className="mb-5">
+-        <h3 className="text-lg font-bold text-ink-900">{title}</h3>
++        <h3 className="font-display text-lg font-semibold tracking-[-0.02em] text-ink-900">{title}</h3>
+         {subtitle && <p className="mt-1 text-sm leading-6 text-ink-500">{subtitle}</p>}
+       </div>
+       <div className="space-y-4">{children}</div>
+diff --git a/frontend/src/pages/Users.tsx b/frontend/src/pages/Users.tsx
+index 8fe74cf..fed8e8b 100644
+--- a/frontend/src/pages/Users.tsx
++++ b/frontend/src/pages/Users.tsx
+@@ -55,10 +55,8 @@ export function Users() {
+       <header className="panel px-6 py-6 md:px-8">
+         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+           <div>
+-            <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
+-              Access control
+-            </div>
+-            <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Usuarios</h2>
++            <div className="eyebrow mb-3">Access control</div>
++            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Usuarios</h2>
+             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
+               Gestao de acesso da ferramenta, com operacoes administrativas centralizadas e estados de conta bem visiveis.
+             </p>
+@@ -82,7 +80,7 @@ export function Users() {
+           <Field label="Senha">
+             <input type="password" className="input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
+           </Field>
+-          <div className="flex items-center gap-3 rounded-[1.25rem] border border-ink-100 bg-white/55 px-4 py-4">
++          <div className="flex items-center gap-3 rounded-[1rem] border border-ink-200 bg-[rgba(248,250,252,0.95)] px-4 py-4">
+             <input
+               type="checkbox"
+               id="is_admin"
+@@ -106,7 +104,7 @@ export function Users() {
+           <div className="overflow-x-auto">
+             <table className="w-full min-w-[60rem] text-sm">
+               <thead className="border-b border-ink-100 bg-white/65">
+-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
++                <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
+                   <th className="px-5 py-4">Usuario</th>
+                   <th className="px-5 py-4">Nome</th>
+                   <th className="px-5 py-4">Perfil</th>
+diff --git a/frontend/src/types/index.ts b/frontend/src/types/index.ts
+index de0637c..7855533 100644
+--- a/frontend/src/types/index.ts
++++ b/frontend/src/types/index.ts
+@@ -30,8 +30,14 @@ export interface AutofindONT {
+   vendor_id: string;
+   equipment_id: string;
+   found_at: string;
++  template_id?: number | null;
++  template_name?: string | null;
+   template_vlan_id?: number | null;
+   template_auto_matched?: boolean;
++  template_lineprofile_id?: number | null;
++  template_srvprofile_id?: number | null;
++  template_user_vlan?: number | null;
++  template_gemport?: number | null;
+ }
+ 
+ export interface ONT {
+@@ -142,3 +148,49 @@ export interface DashboardSummary {
+   onts_total: number;
+   onts_online: number;
+ }
++
++export interface ProvisionTemplate {
++  port: number;
++  slot: number;
++  template_id: number | null;
++  template_name: string | null;
++  lineprofile_id: number | null;
++  srvprofile_id: number | null;
++  gemport: number;
++  vlan_id: number | null;
++  user_vlan: number | null;
++  auto_matched: boolean;
++  source: string;
++  description?: string;
++  lineprofile_mode?: "fixed" | "same_as_vlan";
++  srvprofile_mode?: "fixed" | "same_as_vlan";
++  user_vlan_mode?: "fixed" | "same_as_vlan";
++}
++
++export interface TemplateCatalogItem {
++  id: number;
++  name: string;
++  description: string;
++  lineprofile_mode: "fixed" | "same_as_vlan";
++  lineprofile_id: number | null;
++  srvprofile_mode: "fixed" | "same_as_vlan";
++  srvprofile_id: number | null;
++  gemport: number;
++  vlan_id: number | null;
++  user_vlan_mode: "fixed" | "same_as_vlan";
++  user_vlan: number | null;
++  created_at: string;
++  updated_at: string;
++}
++
++export interface TemplateBinding {
++  id: number;
++  slot: number;
++  pon_start: number;
++  pon_end: number;
++  template_id: number;
++  template_name: string;
++  template_description: string;
++  created_at: string;
++  updated_at: string;
++}
+diff --git a/frontend/tailwind.config.js b/frontend/tailwind.config.js
+index 866c7cd..58479e6 100644
+--- a/frontend/tailwind.config.js
++++ b/frontend/tailwind.config.js
+@@ -5,37 +5,39 @@ export default {
+     extend: {
+       colors: {
+         brand: {
+-          50: "#eef4ff",
+-          100: "#dce7ff",
+-          200: "#bfd1ff",
+-          300: "#92b0ff",
+-          400: "#6289ff",
+-          500: "#4568f4",
+-          600: "#334ed6",
+-          700: "#2c40b2",
+-          800: "#27388f",
+-          900: "#222f72",
+-          950: "#161d46",
++          50: "rgb(var(--brand-50) / <alpha-value>)",
++          100: "rgb(var(--brand-100) / <alpha-value>)",
++          200: "rgb(var(--brand-200) / <alpha-value>)",
++          300: "rgb(var(--brand-300) / <alpha-value>)",
++          400: "rgb(var(--brand-400) / <alpha-value>)",
++          500: "rgb(var(--brand-500) / <alpha-value>)",
++          600: "rgb(var(--brand-600) / <alpha-value>)",
++          700: "rgb(var(--brand-700) / <alpha-value>)",
++          800: "rgb(var(--brand-800) / <alpha-value>)",
++          900: "rgb(var(--brand-900) / <alpha-value>)",
++          950: "rgb(var(--brand-950) / <alpha-value>)",
+         },
+         ink: {
+-          50: "#f6f7fb",
+-          100: "#eceef5",
+-          200: "#d8dce8",
+-          300: "#b6bfd3",
+-          400: "#8f9bb7",
+-          500: "#6f7d9a",
+-          600: "#596681",
+-          700: "#49536a",
+-          800: "#32394b",
+-          900: "#171b24",
++          50: "rgb(var(--ink-50) / <alpha-value>)",
++          100: "rgb(var(--ink-100) / <alpha-value>)",
++          200: "rgb(var(--ink-200) / <alpha-value>)",
++          300: "rgb(var(--ink-300) / <alpha-value>)",
++          400: "rgb(var(--ink-400) / <alpha-value>)",
++          500: "rgb(var(--ink-500) / <alpha-value>)",
++          600: "rgb(var(--ink-600) / <alpha-value>)",
++          700: "rgb(var(--ink-700) / <alpha-value>)",
++          800: "rgb(var(--ink-800) / <alpha-value>)",
++          900: "rgb(var(--ink-900) / <alpha-value>)",
+         },
+       },
+       fontFamily: {
+-        sans: ['"Plus Jakarta Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
++        sans: ['"Public Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
++        display: ['"Schibsted Grotesk"', '"Public Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
+         mono: ['"IBM Plex Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
+       },
+       boxShadow: {
+-        panel: "0 22px 54px -28px rgba(17, 24, 39, 0.28)",
++        panel: "0 16px 36px -28px rgba(26, 36, 52, 0.18), 0 1px 0 rgba(255,255,255,0.75) inset",
++        float: "0 24px 60px -34px rgba(26, 36, 52, 0.22)",
+       },
+     },
+   },
