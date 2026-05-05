@@ -216,8 +216,14 @@ export function parseOntList(output) {
         const key = `${currentPort.frame}-${currentPort.slot}-${currentPort.port}-${ontId}`;
         const current = ontsByKey.get(key) || { ...currentPort, ont_id: ontId };
         current.sn = m[2];
-        current.description = m[6].trim() === '-' ? '' : m[6].trim();
+        current.type = m[3] === '-' ? '' : m[3];
         current.distance_m = m[4] === '-' ? '' : m[4];
+        if (/^-?\d+(?:\.\d+)?\/-?\d+(?:\.\d+)?$/.test(m[5])) {
+          const [rxPower, txPower] = m[5].split('/');
+          current.rx_power_dbm = rxPower;
+          current.tx_power_dbm = txPower;
+        }
+        current.description = m[6].trim() === '-' ? '' : m[6].trim();
         ontsByKey.set(key, current);
       }
     }
@@ -253,6 +259,44 @@ export function parseAlarms(output) {
     }
   }
   return alarms;
+}
+
+export function parseGponPortStates(output) {
+  const ports = [];
+  const blocks = output
+    .split(/-+\s*\n/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  for (const block of blocks) {
+    const fsp = block.match(/F\/S\/P\s*:\s*(\d+)\/(\d+)\/(\d+)/i);
+    if (!fsp) continue;
+
+    const availableBandwidth = block.match(/Available bandwidth\(Kbps\)\s*:\s*([-\d.]+)/i)?.[1] ?? '';
+    const temperature = block.match(/Temperature\(C\)\s*:\s*([-\d.]+)/i)?.[1] ?? '';
+    const txPower = block.match(/TX power\(dBm\)\s*:\s*([-\d.]+)/i)?.[1] ?? '';
+    const opticalModuleStatus = block.match(/Optical Module status\s*:\s*(.+)/i)?.[1]?.trim() ?? '';
+    const portState = block.match(/Port state\s*:\s*(.+)/i)?.[1]?.trim() ?? '';
+    const laserState = block.match(/Laser state\s*:\s*(.+)/i)?.[1]?.trim() ?? '';
+    const txBiasCurrent = block.match(/TX Bias current\(mA\)\s*:\s*([-\d.]+)/i)?.[1] ?? '';
+    const supplyVoltage = block.match(/Supply Voltage\(V\)\s*:\s*([-\d.]+)/i)?.[1] ?? '';
+
+    ports.push({
+      frame: Number(fsp[1]),
+      slot: Number(fsp[2]),
+      port: Number(fsp[3]),
+      optical_module_status: opticalModuleStatus,
+      port_state: portState,
+      laser_state: laserState,
+      available_bandwidth_kbps: availableBandwidth,
+      temperature_c: temperature,
+      tx_bias_current_ma: txBiasCurrent,
+      supply_voltage_v: supplyVoltage,
+      tx_power_dbm: txPower,
+    });
+  }
+
+  return ports;
 }
 
 function escapeRegex(value) {

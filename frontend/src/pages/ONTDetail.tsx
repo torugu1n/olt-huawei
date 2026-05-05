@@ -230,38 +230,38 @@ export function ONTDetail() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="panel px-6 py-6 md:px-8">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+    <div className="space-y-5">
+      <header className="panel px-5 py-5 md:px-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="mb-3 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-ink-400">
+            <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-400">
               <span>Dispositivos</span>
               <span>/</span>
               <span>Monitoramento</span>
               <span>/</span>
               <span className="text-brand-700">{info?.description || info?.sn}</span>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-[2rem] font-semibold tracking-[-0.03em] text-ink-900 md:text-[2.75rem]">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="font-display text-[1.6rem] font-semibold tracking-[-0.03em] text-ink-900 md:text-[2.1rem]">
                 ONT {info?.description ? `— ${info.description}` : `— ${info?.sn}`}
               </h1>
               <StatusBadge value={info?.run_state ?? "—"} />
               <StatusBadge value={info?.config_state ?? "—"} />
             </div>
-            <p className="mt-3 text-sm leading-7 text-ink-500">
+            <p className="mt-2 text-[13px] leading-6 text-ink-500">
               ID {ont_id} • PON 0/{slot}/{port} • Serial {info?.sn}
             </p>
             {refreshing ? <p className="mt-2 text-xs text-ink-400">Atualizando leitura automaticamente...</p> : null}
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => refreshDetail()} className="rounded-full border border-brand-200 bg-brand-50 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-700 transition hover:bg-brand-100">
+            <button onClick={() => refreshDetail()} className="rounded-full border border-brand-200 bg-brand-50 px-3.5 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-brand-700 transition hover:bg-brand-100">
               Atualizar
             </button>
-            <button onClick={handleReboot} className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800 transition hover:bg-amber-100">
+            <button onClick={handleReboot} className="rounded-full border border-amber-200 bg-amber-50 px-3.5 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-amber-800 transition hover:bg-amber-100">
               Reboot
             </button>
-            <button onClick={handleDelete} className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100">
+            <button onClick={handleDelete} className="rounded-full border border-red-200 bg-red-50 px-3.5 py-2 text-[10px] font-medium uppercase tracking-[0.14em] text-red-700 transition hover:bg-red-100">
               Remover
             </button>
           </div>
@@ -322,7 +322,7 @@ export function ONTDetail() {
 
         <SectionCard title="Sinal óptico" subtitle="Consulta da potência da ONT e métricas ópticas disponíveis para esta porta.">
           {opticalHistory.length > 0 ? (
-            <div className="mb-5 rounded-[1.25rem] border border-ink-100 bg-ink-50/80 px-4 py-4">
+            <div className="mb-5 rounded-[1.1rem] border border-ink-100 bg-ink-50/80 px-4 py-3.5">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <div className="text-[11px] uppercase tracking-[0.18em] text-ink-400">Tendência recente</div>
@@ -330,7 +330,7 @@ export function ONTDetail() {
                     {latestOpticalTimestamp ? `Última amostra ${formatRelativeTime(latestOpticalTimestamp)}` : "Histórico local desta sessão"}
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-400">
+                <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-ink-400">
                   <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1">
                     <span className="h-2 w-2 rounded-full bg-brand-500" />
                     RX
@@ -421,25 +421,25 @@ export function ONTDetail() {
           <p className="text-sm text-ink-500">Nenhum service-port configurado.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-sm">
+            <table className="w-full min-w-[34rem] text-[13px]">
               <thead className="border-b border-ink-100 bg-white/65">
-                <tr className="text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
-                  <th className="px-4 py-4">Index</th>
-                  <th className="px-4 py-4">VLAN</th>
-                  <th className="px-4 py-4">GEM Port</th>
-                  <th className="px-4 py-4">Estado</th>
-                  <th className="px-4 py-4 text-right">Ação</th>
+                <tr className="text-left text-[10px] uppercase tracking-[0.16em] text-ink-400">
+                  <th className="px-4 py-3.5">Index</th>
+                  <th className="px-4 py-3.5">VLAN</th>
+                  <th className="px-4 py-3.5">GEM Port</th>
+                  <th className="px-4 py-3.5">Estado</th>
+                  <th className="px-4 py-3.5 text-right">Ação</th>
                 </tr>
               </thead>
               <tbody>
                 {servicePorts.map((sp) => (
                   <tr key={sp.index} className="border-b border-ink-100/80 last:border-0">
-                    <td className="px-4 py-4 font-mono text-xs text-ink-700">{sp.index}</td>
-                    <td className="px-4 py-4 text-ink-700">{sp.vlan}</td>
-                    <td className="px-4 py-4 text-ink-700">{sp.gemport}</td>
-                    <td className="px-4 py-4"><StatusBadge value={sp.state} /></td>
-                    <td className="px-4 py-4 text-right">
-                      <button onClick={() => handleDeleteSP(sp.index)} className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100">
+                    <td className="px-4 py-3.5 font-mono text-[12px] text-ink-700">{sp.index}</td>
+                    <td className="px-4 py-3.5 text-ink-700">{sp.vlan}</td>
+                    <td className="px-4 py-3.5 text-ink-700">{sp.gemport}</td>
+                    <td className="px-4 py-3.5"><StatusBadge value={sp.state} /></td>
+                    <td className="px-4 py-3.5 text-right">
+                      <button onClick={() => handleDeleteSP(sp.index)} className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-red-700 transition hover:bg-red-100">
                         Remover
                       </button>
                     </td>
@@ -453,7 +453,7 @@ export function ONTDetail() {
 
       <SectionCard title="Saída técnica da OLT" subtitle="Retorno bruto usado pelo parser atual para leitura e depuração.">
         <details>
-          <summary className="cursor-pointer list-none rounded-[1rem] border border-ink-200 bg-white px-4 py-3 text-sm font-medium text-ink-800 transition hover:bg-ink-50">
+          <summary className="cursor-pointer list-none rounded-[1rem] border border-ink-200 bg-white px-4 py-3 text-[13px] font-medium text-ink-800 transition hover:bg-ink-50">
             Ver saída técnica da OLT
           </summary>
           <div className="mt-4 space-y-4">
@@ -494,12 +494,12 @@ function MetricCard({
   } as const;
 
   return (
-    <div className={`panel px-6 py-6 ${accentClass[accent]}`}>
-      <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">{title}</div>
-      <div className="mt-5 text-[2rem] font-semibold leading-none text-ink-900">{value}</div>
+    <div className={`panel px-5 py-5 ${accentClass[accent]}`}>
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">{title}</div>
+      <div className="mt-4 text-[1.55rem] font-semibold leading-none text-ink-900 md:text-[1.75rem]">{value}</div>
       {meter !== undefined ? (
-        <div className="mt-5">
-          <div className="h-2 overflow-hidden rounded-full bg-ink-100">
+        <div className="mt-4">
+          <div className="h-1.5 overflow-hidden rounded-full bg-ink-100">
             <div
               className={`h-full rounded-full ${
                 accent === "danger" ? "bg-red-400" : accent === "brand" ? "bg-brand-500" : "bg-ink-400"
@@ -509,7 +509,7 @@ function MetricCard({
           </div>
         </div>
       ) : null}
-      <div className="mt-6 text-sm text-ink-500">{note}</div>
+      <div className="mt-4 text-[13px] leading-6 text-ink-500">{note}</div>
     </div>
   );
 }
@@ -524,10 +524,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="panel px-6 py-6 md:px-7">
-      <div className="mb-6">
-        <h2 className="font-display text-[1.35rem] font-semibold tracking-[-0.02em] text-ink-900">{title}</h2>
-        {subtitle ? <p className="mt-2 text-[0.98rem] leading-8 text-ink-500">{subtitle}</p> : null}
+    <section className="panel px-5 py-5 md:px-6">
+      <div className="mb-5">
+        <h2 className="font-display text-[1.15rem] font-semibold tracking-[-0.02em] text-ink-900">{title}</h2>
+        {subtitle ? <p className="mt-1.5 text-[14px] leading-6 text-ink-500">{subtitle}</p> : null}
       </div>
       {children}
     </section>
@@ -539,9 +539,9 @@ function InfoList({ rows }: { rows: Array<[string, React.ReactNode]> }) {
   return (
     <div className="space-y-3">
       {visibleRows.map(([label, value]) => (
-        <div key={label} className="panel-muted flex items-center justify-between gap-4 px-4 py-3">
-          <span className="text-sm text-ink-500">{label}</span>
-          <span className="text-right text-sm font-medium text-ink-900">{value}</span>
+        <div key={label} className="panel-muted flex items-center justify-between gap-4 px-4 py-2.5">
+          <span className="text-[13px] text-ink-500">{label}</span>
+          <span className="text-right text-[13px] font-medium text-ink-900">{value}</span>
         </div>
       ))}
     </div>
@@ -564,9 +564,9 @@ function InfoTile({
   } as const;
 
   return (
-    <div className="panel-muted px-4 py-4">
-      <div className="text-[11px] uppercase tracking-[0.18em] text-ink-400">{label}</div>
-      <div className={`mt-2 text-sm font-semibold ${emphasisClass[emphasis]}`}>{value}</div>
+    <div className="panel-muted px-4 py-3">
+      <div className="text-[10px] uppercase tracking-[0.16em] text-ink-400">{label}</div>
+      <div className={`mt-1.5 text-[13px] font-semibold ${emphasisClass[emphasis]}`}>{value}</div>
     </div>
   );
 }

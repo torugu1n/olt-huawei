@@ -145,8 +145,31 @@ export interface DashboardSummary {
   boards: Board[];
   alarms: Alarm[];
   autofind: AutofindONT[];
+  gpon_ports?: Array<{
+    frame: number;
+    slot: number;
+    port: number;
+    optical_module_status: string;
+    port_state: string;
+    laser_state: string;
+    available_bandwidth_kbps: string;
+    temperature_c: string;
+    tx_bias_current_ma: string;
+    supply_voltage_v: string;
+    tx_power_dbm: string;
+  }>;
   onts_total: number;
   onts_online: number;
+  metrics?: {
+    gpon_ports_total: number;
+    gpon_ports_online: number;
+    avg_port_temperature_c: number | null;
+    max_port_temperature_c: number | null;
+    total_available_bandwidth_gbps: number | null;
+    avg_port_tx_power_dbm: number | null;
+    boards_active: number;
+    boards_faulty: number;
+  };
 }
 
 export interface ProvisionTemplate {
