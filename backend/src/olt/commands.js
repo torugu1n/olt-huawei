@@ -192,8 +192,11 @@ export async function getOntInfo(slot, port, ontId) {
 
 export async function getOntOptical(slot, port, ontId) {
   return withCache(`ont-optical:${slot}:${port}:${ontId}`, TTL.ontOptical, async () => {
-    const [raw] = await runInGponInterface(slot, [`display ont info summary ${port}`], 25_000);
-    return { raw, optical: parser.parseOpticalFromSummary(raw, ontId) };
+    const [raw] = await runInGponInterface(slot, [
+      `display ont optical-info ${port} ${ontId}`,
+    ], 25_000);
+    const optical = parser.parseOptical(raw);
+    return { raw, optical: optical ?? {} };
   });
 }
 
@@ -213,12 +216,12 @@ export async function getOntDetailSnapshot(slot, port, ontId) {
       slot,
       [
         `display ont info ${port} ${ontId}`,
-        `display ont info summary ${port}`,
+        `display ont optical-info ${port} ${ontId}`,
       ],
       25_000,
     );
     const info = parser.parseOntInfo(infoRaw);
-    const optical = parser.parseOpticalFromSummary(opticalRaw, ontId);
+    const optical = parser.parseOptical(opticalRaw) ?? {};
     const { raw: servicePortsRaw, servicePorts } = await getServicePorts(slot, port, ontId);
 
     return {
@@ -329,11 +332,13 @@ export async function getSystemMetrics() {
 export async function getDashboardSummary() {
   return withCache('dashboard-summary', TTL.dashboard, async () => {
     const previousSummary = getCachedValue('dashboard-summary');
-    const ontsResult       = await safeDashboardLoad(() => getOntList(), getCachedValue('onts:all:all'));
-    const boardsResult     = await safeDashboardLoad(() => getBoards(), getCachedValue('boards'));
-    const alarmsResult     = await safeDashboardLoad(() => getAlarms(), getCachedValue('alarms'));
-    const autofindResult   = await safeDashboardLoad(() => getAutofind(), getCachedValue('autofind'));
-    const sshMetricsResult = await safeDashboardLoad(() => getSystemMetrics(), getCachedValue('system-metrics'));
+    const [ontsResult, boardsResult, alarmsResult, autofindResult, sshMetricsResult] = await Promise.all([
+      safeDashboardLoad(() => getOntList(), getCachedValue('onts:all:all')),
+      safeDashboardLoad(() => getBoards(), getCachedValue('boards')),
+      safeDashboardLoad(() => getAlarms(), getCachedValue('alarms')),
+      safeDashboardLoad(() => getAutofind(), getCachedValue('autofind')),
+      safeDashboardLoad(() => getSystemMetrics(), getCachedValue('system-metrics')),
+    ]);
 
     const onts = ontsResult.value?.onts ?? [];
     const boards = boardsResult.value?.boards ?? [];
