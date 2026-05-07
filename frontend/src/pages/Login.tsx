@@ -32,22 +32,6 @@ export function Login({ onLogin }: LoginProps) {
         {/* grade de fundo sutil */}
         <div className="absolute inset-0 [background-image:linear-gradient(rgba(99,102,241,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(99,102,241,0.06)_1px,transparent_1px)] [background-size:40px_40px]" />
 
-        {/* logo */}
-        <div className="relative z-10 flex items-center gap-3 px-12 pt-12">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 shadow-md">
-            <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <circle cx="12" cy="12" r="2.5" />
-              <circle cx="5" cy="6" r="1.6" />
-              <circle cx="19" cy="6" r="1.6" />
-              <circle cx="5" cy="18" r="1.6" />
-              <circle cx="19" cy="18" r="1.6" />
-              <path d="M7 6h4m2 0h4M6.5 7.5l3 3m5 0 3-3M6.5 16.5l3-3m5 0 3 3M12 9.5v-1M12 15.5v-1" strokeLinecap="round" />
-            </svg>
-          </div>
-          <span className="font-display text-[1.15rem] font-semibold tracking-[-0.02em] text-ink-900">
-            NETCORE<span className="text-brand-600">_OS</span>
-          </span>
-        </div>
 
         {/* ilustração centralizada */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-12 py-8">
@@ -69,7 +53,7 @@ export function Login({ onLogin }: LoginProps) {
         {/* rodapé */}
         <div className="relative z-10 px-12 pb-10">
           <p className="text-[12px] text-ink-400">
-            Huawei MA5800-X2 · OLT Manager
+            Vtec Solutions © 2026
           </p>
         </div>
       </div>

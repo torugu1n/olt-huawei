@@ -108,7 +108,7 @@ export function Sidebar({ user, onLogout, open, onClose, collapsed, onToggleColl
           {!collapsed ? (
             <div className="min-w-0">
               <div className="font-display text-[1.05rem] font-semibold tracking-[-0.03em] text-ink-900">
-                OLT Manager
+                Gerenciador de OLTs
               </div>
               <div className="mt-1 text-[12px] text-ink-500">{t("app.subtitle")}</div>
             </div>

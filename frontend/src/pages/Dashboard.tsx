@@ -105,7 +105,7 @@ export function Dashboard() {
             <div className="eyebrow">OLT Summary</div>
           </div>
           <h1 className="font-display text-[1.7rem] font-semibold leading-[1.02] tracking-[-0.03em] text-ink-900 md:text-[2.15rem]">
-            Estado operacional da MA5800-X2
+            Operational Status
           </h1>
           <p className="mt-2 max-w-3xl text-[14px] leading-6 text-ink-500">
             Visão consolidada do inventário, alarmes, chassi e fila operacional de provisionamento.
