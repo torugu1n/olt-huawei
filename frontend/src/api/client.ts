@@ -23,6 +23,9 @@ api.interceptors.response.use(
 export default api;
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
+export const checkSetup = () => api.get("/auth/setup");
+export const setupAdmin = (data: object) => api.post("/auth/setup", data);
+
 export const login = (username: string, password: string) =>
   api.post("/auth/login", { username, password });
 

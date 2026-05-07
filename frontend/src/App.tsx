@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "./hooks/useAuth";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
+import { Setup } from "./pages/Setup";
 import { Dashboard } from "./pages/Dashboard";
 import { Autofind } from "./pages/Autofind";
 import { Provision } from "./pages/Provision";
@@ -14,10 +16,20 @@ import { TemplatesPage } from "./pages/Templates";
 import { ONTDetail } from "./pages/ONTDetail";
 import { SettingsPage } from "./pages/Settings";
 import { useUISettings } from "./context/UISettingsContext";
+import { checkSetup } from "./api/client";
 
 export default function App() {
   const { user, login, logout, isAuthenticated } = useAuth();
   const { t } = useUISettings();
+  const [needsSetup, setNeedsSetup] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkSetup()
+      .then(({ data }) => setNeedsSetup(data.needs_setup))
+      .catch(() => setNeedsSetup(false));
+  }, []);
+
+  if (needsSetup === null) return null;
 
   return (
     <BrowserRouter>
@@ -28,7 +40,12 @@ export default function App() {
         {t("skip.content")}
       </a>
       <Routes>
+        <Route path="/setup" element={
+          needsSetup ? <Setup /> : <Navigate to="/login" replace />
+        } />
+
         <Route path="/login" element={
+          needsSetup ? <Navigate to="/setup" replace /> :
           isAuthenticated ? <Navigate to="/" replace /> : <Login onLogin={login} />
         } />
 
@@ -49,7 +66,7 @@ export default function App() {
           {user?.is_admin && <Route path="/settings" element={<SettingsPage />} />}
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to={needsSetup ? "/setup" : "/"} replace />} />
       </Routes>
     </BrowserRouter>
   );

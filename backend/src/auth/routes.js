@@ -2,6 +2,28 @@ import bcrypt from 'bcryptjs';
 import db from '../db.js';
 
 export default async function authRoutes(fastify) {
+  // ── Setup (primeira execução) ──────────────────────────────────────────────
+  fastify.get('/setup', async () => {
+    const { count } = db.prepare('SELECT COUNT(*) AS count FROM users').get();
+    return { needs_setup: count === 0 };
+  });
+
+  fastify.post('/setup', async (req, reply) => {
+    const { count } = db.prepare('SELECT COUNT(*) AS count FROM users').get();
+    if (count > 0) return reply.code(403).send({ detail: 'Setup já foi realizado.' });
+
+    const { username, full_name, password } = req.body ?? {};
+    if (!username || !full_name || !password)
+      return reply.code(400).send({ detail: 'username, full_name e password são obrigatórios.' });
+    if (password.length < 6)
+      return reply.code(400).send({ detail: 'Senha deve ter pelo menos 6 caracteres.' });
+
+    db.prepare('INSERT INTO users (username, full_name, hashed_password, is_admin) VALUES (?, ?, ?, 1)')
+      .run(username, full_name, bcrypt.hashSync(password, 10));
+
+    return reply.code(201).send({ detail: 'Conta admin criada com sucesso.' });
+  });
+
   // ── Login ──────────────────────────────────────────────────────────────────
   fastify.post('/login', {
     schema: {
