@@ -3,11 +3,18 @@ services:
     image: ghcr.io/torugu1n/olt-manager:latest
     container_name: olt-manager
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
       DATABASE_PATH: /data/olt_manager.db
       PORT: 8000
+      SECRET_KEY: troque-esta-chave
+      OLT_HOST: 192.168.1.1
+      OLT_PORT: 22
+      OLT_USERNAME: admin
+      OLT_PASSWORD: senha_da_olt
+      OLT_ENABLE_PASSWORD: ""
+      OLT_NAME: MA5800-X2
+      OLT_TIMEOUT: 30
+      OLT_SESSION_BOOTSTRAP_COMMANDS: undo idle-timeout
     ports:
       - "8000:8000"
     volumes:
