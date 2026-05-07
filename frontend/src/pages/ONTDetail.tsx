@@ -10,6 +10,13 @@ type OpticalSample = {
   tx: number | null;
 };
 
+type OperationalEvent = {
+  timestamp: string;
+  title: string;
+  details: string;
+  status: string;
+};
+
 export function ONTDetail() {
   const { slot, port, ont_id } = useParams<{ slot: string; port: string; ont_id: string }>();
   const navigate = useNavigate();
@@ -31,11 +38,6 @@ export function ONTDetail() {
   const p = Number(port);
   const o = Number(ont_id);
   const historyStorageKey = useMemo(() => `ont-optical-history:${s}:${p}:${o}`, [s, p, o]);
-
-  const persistOpticalHistory = (samples: OpticalSample[]) => {
-    setOpticalHistory(samples);
-    localStorage.setItem(historyStorageKey, JSON.stringify(samples));
-  };
 
   const appendOpticalSample = (source?: OpticalInfo | null) => {
     const rx = parseNumeric(source?.rx_power_dbm);
@@ -220,6 +222,7 @@ export function ONTDetail() {
   const onlineDuration = compactDuration(info?.online_duration ?? "—");
   const signalMeterValue = Number.isFinite(rxPower) ? clamp(((rxPower - -27) / 19) * 100, 0, 100) : 0;
   const latestOpticalTimestamp = opticalHistory.length > 0 ? opticalHistory[opticalHistory.length - 1]?.ts : null;
+  const operationalEvents = buildOperationalEvents(info, optical, servicePorts);
 
   if (loading) {
     return <div className="panel px-6 py-5 text-sm text-ink-500">Carregando telemetria da ONT...</div>;
@@ -268,95 +271,54 @@ export function ONTDetail() {
         </div>
       </header>
 
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
-          title="Sinal óptico RX"
-          value={Number.isFinite(rxPower) ? `${rxPower.toFixed(2)} dBm` : "Sem leitura"}
-          note="-27 dBm crítico • -8 dBm máximo"
-          accent={signalHealth.accent}
-          meter={signalMeterValue}
-        />
-        <MetricCard
-          title="Potência TX"
-          value={Number.isFinite(txPower) ? `${txPower.toFixed(2)} dBm` : "Sem leitura"}
-          note="Leitura da transmissão da ONT"
-          meter={Number.isFinite(txPower) ? clamp(((txPower + 5) / 10) * 100, 0, 100) : undefined}
-        />
-        <MetricCard
-          title="Tempo de atividade"
-          value={onlineDuration}
-          note={info?.last_up_time ? `Último up: ${info.last_up_time}` : "Sem timestamp de subida"}
-        />
-        <MetricCard
-          title="Perfis"
-          value={joinParts(info?.lineprofile_id, info?.srvprofile_id) ?? "—"}
-          note={joinParts(info?.lineprofile_name, info?.srvprofile_name) ?? "Sem nome de perfil"}
-        />
-      </section>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="space-y-5 xl:col-span-4">
+          <MetricCard
+            title="Sinal óptico (RX)"
+            value={Number.isFinite(rxPower) ? `${rxPower.toFixed(2)} dBm` : "Sem leitura"}
+            note="-27 dBm crítico • -8 dBm máximo"
+            accent={signalHealth.accent}
+            meter={signalMeterValue}
+            badgeLabel={signalHealth.label}
+          />
+          <MetricCard
+            title="Potência TX"
+            value={Number.isFinite(txPower) ? `${txPower.toFixed(2)} dBm` : "Sem leitura"}
+            note="Leitura da transmissão da ONT"
+            meter={Number.isFinite(txPower) ? clamp(((txPower + 5) / 10) * 100, 0, 100) : undefined}
+            badgeLabel={Number.isFinite(txPower) ? "Saudável" : "Sem leitura"}
+          />
+          <MetricCard
+            title="Tempo de atividade"
+            value={onlineDuration}
+            note={info?.last_up_time ? `Último up: ${info.last_up_time}` : "Sem timestamp de subida"}
+            badgeLabel={info?.run_state === "online" ? "Online" : undefined}
+          />
+        </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard title="Resumo operacional" subtitle="Identidade da ONT e parâmetros aplicados na sessão atual.">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <InfoList
-              rows={[
-                ["Descrição", info?.description],
-                ["Control flag", info?.control_flag],
-                ["Match state", info?.match_state],
-                ["Management mode", info?.management_mode],
-                ["Authentic type", info?.authentic_type],
-                ["DBA type", info?.dba_type],
-              ]}
-            />
-            <InfoList
-              rows={[
-                ["Line profile", joinParts(info?.lineprofile_id, info?.lineprofile_name)],
-                ["Service profile", joinParts(info?.srvprofile_id, info?.srvprofile_name)],
-                ["Mapping mode", info?.mapping_mode],
-                ["QoS mode", info?.qos_mode],
-                ["OMCC encrypt", info?.omcc_encrypt_switch],
-                ["FEC upstream", info?.fec_upstream_state],
-              ]}
-            />
-          </div>
-        </SectionCard>
-
-        <SectionCard title="Sinal óptico" subtitle="Consulta da potência da ONT e métricas ópticas disponíveis para esta porta.">
-          {opticalHistory.length > 0 ? (
-            <div className="mb-5 rounded-[1.1rem] border border-ink-100 bg-ink-50/80 px-4 py-3.5">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-ink-400">Tendência recente</div>
-                  <div className="mt-1 text-sm text-ink-500">
-                    {latestOpticalTimestamp ? `Última amostra ${formatRelativeTime(latestOpticalTimestamp)}` : "Histórico local desta sessão"}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.14em] text-ink-400">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1">
-                    <span className="h-2 w-2 rounded-full bg-brand-500" />
-                    RX
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1">
-                    <span className="h-2 w-2 rounded-full bg-amber-400" />
-                    TX
-                  </span>
-                </div>
-              </div>
-              <OpticalTrendChart history={opticalHistory} />
+        <SectionCard
+          title="Histórico de conectividade"
+          subtitle="Tendência local de RX/TX e métricas ópticas disponíveis para esta ONT."
+          className="xl:col-span-8"
+          headerAction={
+            <div className="flex items-center gap-2 rounded-[0.9rem] bg-ink-100 p-1">
+              <span className="rounded-[0.7rem] bg-white px-3 py-1.5 text-[12px] font-semibold text-brand-700 shadow-sm">RX Power</span>
+              <span className="px-3 py-1.5 text-[12px] text-ink-500">TX Power</span>
             </div>
-          ) : null}
-
-          {optical && Object.keys(optical).length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <InfoTile label="RX Power" value={formatUnit(optical.rx_power_dbm, "dBm")} emphasis={signalHealth.accent === "brand" ? "brand" : signalHealth.accent === "danger" ? "danger" : "normal"} />
-              <InfoTile label="TX Power" value={formatUnit(optical.tx_power_dbm, "dBm")} />
-              <InfoTile label="OLT RX" value={formatUnit(optical.olt_rx_power_dbm, "dBm")} />
-              <InfoTile label="Temperatura" value={formatUnit(optical.temperature_c, "°C")} />
-              <InfoTile label="Tensão" value={formatUnit(optical.voltage_v, "V")} />
-              <InfoTile label="Corrente laser" value={formatUnit(optical.laser_bias_ma, "mA")} />
+          }
+        >
+          {opticalHistory.length > 0 ? (
+            <div className="space-y-4">
+              <OpticalTrendChart history={opticalHistory} tall />
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <InfoTile label="RX Power" value={formatUnit(optical?.rx_power_dbm, "dBm")} emphasis={signalHealth.accent === "brand" ? "brand" : signalHealth.accent === "danger" ? "danger" : "normal"} />
+                <InfoTile label="TX Power" value={formatUnit(optical?.tx_power_dbm, "dBm")} />
+                <InfoTile label="Última amostra" value={latestOpticalTimestamp ? formatRelativeTime(latestOpticalTimestamp) : "—"} />
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-ink-500">Sem leitura óptica válida neste snapshot.</p>
+              <p className="text-sm text-ink-500">Sem histórico óptico válido nesta sessão.</p>
               <button
                 onClick={loadOptical}
                 disabled={loadingOptical || opticalCooldownSeconds > 0}
@@ -370,51 +332,94 @@ export function ONTDetail() {
         </SectionCard>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard title="Hardware e histórico" subtitle="Campos estáveis da ONT úteis para diagnóstico e auditoria.">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <InfoList
-              rows={[
-                ["Distância", info?.distance_m ? `${info.distance_m} m` : undefined],
-                ["Software work mode", info?.software_work_mode],
-                ["Isolation state", info?.isolation_state],
-                ["Interoperability", info?.interoperability_mode],
-                ["Power reduction", info?.power_reduction_status],
-                ["Battery state", info?.battery_state],
-                ["Power type", info?.power_type],
-              ]}
-            />
-            <InfoList
-              rows={[
-                ["CPU occupation", info?.cpu_occupation],
-                ["Memory occupation", info?.memory_occupation],
-                ["Last up time", info?.last_up_time],
-                ["Last down time", info?.last_down_time],
-                ["Last down cause", info?.last_down_cause],
-                ["Last restart reason", info?.last_restart_reason],
-              ]}
-            />
-          </div>
+      <div className="grid gap-6 xl:grid-cols-12">
+        <SectionCard title="Log técnico de eventos" subtitle="Últimos sinais reais derivados da sessão e do estado operacional." className="xl:col-span-8">
+          {operationalEvents.length === 0 ? (
+            <p className="text-sm text-ink-500">Sem eventos operacionais suficientes para exibir nesta ONT.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[38rem] text-[13px]">
+                <thead className="border-b border-ink-100">
+                  <tr className="text-left text-[10px] uppercase tracking-[0.16em] text-ink-400">
+                    <th className="px-2 py-3">Timestamp</th>
+                    <th className="px-2 py-3">Evento</th>
+                    <th className="px-2 py-3">Detalhes</th>
+                    <th className="px-2 py-3 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {operationalEvents.map((event, index) => (
+                    <tr key={`${event.title}-${index}`} className="border-b border-ink-100/80 last:border-0">
+                      <td className="px-2 py-3 font-mono text-[12px] text-ink-500">{event.timestamp}</td>
+                      <td className="px-2 py-3 font-semibold text-ink-900">{event.title}</td>
+                      <td className="px-2 py-3 text-ink-500">{event.details}</td>
+                      <td className="px-2 py-3 text-right">
+                        <StatusBadge value={event.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </SectionCard>
 
-        <SectionCard title="Ações e WAN" subtitle="Ações rápidas e saídas auxiliares da OLT sob demanda.">
-          <div className="space-y-4">
-            <div className="panel-muted px-4 py-4">
-              <div className="text-sm font-medium text-ink-900">WAN Info</div>
-              <div className="mt-1 text-sm text-ink-500">Carrega o retorno bruto da OLT para a sessão WAN desta ONT.</div>
-              <button onClick={loadWan} className="action-secondary mt-4">
-                {wanInfo ? "Atualizar WAN" : "Carregar WAN"}
-              </button>
-            </div>
+        <SectionCard title="Especificações do hardware" subtitle="Campos estáveis úteis para diagnóstico, auditoria e conferência de perfil." className="xl:col-span-4">
+          <div className="space-y-3">
+            <InfoList
+              rows={[
+                ["Fabricante", "Huawei Technologies"],
+                ["Serial Number", info?.sn],
+                ["Porta PON", `0/${slot}/${port}`],
+                ["ONT ID", info?.ont_id ?? ont_id],
+                ["Distância", info?.distance_m ? `${info.distance_m} m` : undefined],
+                ["Line profile", joinParts(info?.lineprofile_id, info?.lineprofile_name)],
+                ["Service profile", joinParts(info?.srvprofile_id, info?.srvprofile_name)],
+                ["Temperatura", formatUnit(optical?.temperature_c ?? info?.temperature, "°C")],
+              ]}
+            />
 
-            {wanInfo ? (
-              <pre className="overflow-x-auto rounded-[1.25rem] border border-ink-200 bg-ink-900 p-4 text-xs text-emerald-300 whitespace-pre-wrap">
-                {wanInfo}
-              </pre>
-            ) : null}
+            <div className="panel-muted px-4 py-4">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-ink-400">Ações rápidas</div>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button onClick={handleReboot} className="rounded-[0.9rem] border border-ink-200 bg-white px-3 py-4 text-[12px] font-medium text-ink-700 transition hover:border-amber-200 hover:text-amber-700">
+                  Reboot remoto
+                </button>
+                <button onClick={loadWan} className="rounded-[0.9rem] border border-ink-200 bg-white px-3 py-4 text-[12px] font-medium text-ink-700 transition hover:border-brand-200 hover:text-brand-700">
+                  {wanInfo ? "Atualizar WAN" : "Carregar WAN"}
+                </button>
+              </div>
+            </div>
           </div>
         </SectionCard>
       </div>
+
+      <SectionCard title="Configuração operacional" subtitle="Identidade, perfis e mapeamentos aplicados na sessão atual.">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <InfoList
+            rows={[
+              ["Descrição", info?.description],
+              ["Control flag", info?.control_flag],
+              ["Match state", info?.match_state],
+              ["Management mode", info?.management_mode],
+              ["Authentic type", info?.authentic_type],
+              ["DBA type", info?.dba_type],
+              ["Software work mode", info?.software_work_mode],
+            ]}
+          />
+          <InfoList
+            rows={[
+              ["Line profile", joinParts(info?.lineprofile_id, info?.lineprofile_name)],
+              ["Service profile", joinParts(info?.srvprofile_id, info?.srvprofile_name)],
+              ["Mapping mode", info?.mapping_mode],
+              ["QoS mode", info?.qos_mode],
+              ["OMCC encrypt", info?.omcc_encrypt_switch],
+              ["FEC upstream", info?.fec_upstream_state],
+              ["Interoperability", info?.interoperability_mode],
+            ]}
+          />
+        </div>
+      </SectionCard>
 
       <SectionCard title="Service Ports" subtitle="Mapeamento de VLAN e GEM Port configurado para esta ONT.">
         {servicePorts.length === 0 ? (
@@ -451,6 +456,14 @@ export function ONTDetail() {
         )}
       </SectionCard>
 
+      {wanInfo ? (
+        <SectionCard title="WAN Info" subtitle="Retorno bruto da sessão WAN consultada sob demanda.">
+          <pre className="overflow-x-auto rounded-[1.25rem] border border-ink-200 bg-ink-900 p-4 text-xs text-emerald-300 whitespace-pre-wrap">
+            {wanInfo}
+          </pre>
+        </SectionCard>
+      ) : null}
+
       <SectionCard title="Saída técnica da OLT" subtitle="Retorno bruto usado pelo parser atual para leitura e depuração.">
         <details>
           <summary className="cursor-pointer list-none rounded-[1rem] border border-ink-200 bg-white px-4 py-3 text-[13px] font-medium text-ink-800 transition hover:bg-ink-50">
@@ -480,12 +493,14 @@ function MetricCard({
   note,
   accent = "normal",
   meter,
+  badgeLabel,
 }: {
   title: string;
   value: string;
   note: string;
   accent?: "normal" | "brand" | "danger";
   meter?: number;
+  badgeLabel?: string;
 }) {
   const accentClass = {
     normal: "border-ink-200 bg-white",
@@ -495,7 +510,14 @@ function MetricCard({
 
   return (
     <div className={`panel px-5 py-5 ${accentClass[accent]}`}>
-      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">{title}</div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">{title}</div>
+        {badgeLabel ? (
+          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-600">
+            {badgeLabel}
+          </span>
+        ) : null}
+      </div>
       <div className="mt-4 text-[1.55rem] font-semibold leading-none text-ink-900 md:text-[1.75rem]">{value}</div>
       {meter !== undefined ? (
         <div className="mt-4">
@@ -518,16 +540,23 @@ function SectionCard({
   title,
   subtitle,
   children,
+  className = "",
+  headerAction,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  className?: string;
+  headerAction?: React.ReactNode;
 }) {
   return (
-    <section className="panel px-5 py-5 md:px-6">
-      <div className="mb-5">
-        <h2 className="font-display text-[1.15rem] font-semibold tracking-[-0.02em] text-ink-900">{title}</h2>
-        {subtitle ? <p className="mt-1.5 text-[14px] leading-6 text-ink-500">{subtitle}</p> : null}
+    <section className={`panel px-5 py-5 md:px-6 ${className}`}>
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-[1.15rem] font-semibold tracking-[-0.02em] text-ink-900">{title}</h2>
+          {subtitle ? <p className="mt-1.5 text-[14px] leading-6 text-ink-500">{subtitle}</p> : null}
+        </div>
+        {headerAction}
       </div>
       {children}
     </section>
@@ -571,7 +600,7 @@ function InfoTile({
   );
 }
 
-function OpticalTrendChart({ history }: { history: OpticalSample[] }) {
+function OpticalTrendChart({ history, tall = false }: { history: OpticalSample[]; tall?: boolean }) {
   const points = history.slice(-12);
   const rxValues = points.map((sample) => sample.rx).filter((value): value is number => typeof value === "number");
   const txValues = points.map((sample) => sample.tx).filter((value): value is number => typeof value === "number");
@@ -609,7 +638,7 @@ function OpticalTrendChart({ history }: { history: OpticalSample[] }) {
   return (
     <div className="space-y-3">
       <div className="overflow-hidden rounded-[1rem] border border-ink-100 bg-white px-3 py-3">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full">
+        <svg viewBox={`0 0 ${width} ${height}`} className={`${tall ? "h-64" : "h-44"} w-full`}>
           {guideValues.map((value) => {
             const y = toY(value);
             return (
@@ -667,10 +696,10 @@ function compactDuration(value: string) {
 }
 
 function getOpticalHealth(rxPower: number) {
-  if (!Number.isFinite(rxPower)) return { accent: "normal" as const };
-  if (rxPower <= -27) return { accent: "danger" as const };
-  if (rxPower <= -24) return { accent: "brand" as const };
-  return { accent: "brand" as const };
+  if (!Number.isFinite(rxPower)) return { accent: "normal" as const, label: "Sem leitura" };
+  if (rxPower <= -27) return { accent: "danger" as const, label: "Crítico" };
+  if (rxPower <= -24) return { accent: "brand" as const, label: "Atenção" };
+  return { accent: "brand" as const, label: "Saudável" };
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -697,4 +726,80 @@ function formatShortTime(timestamp: number) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function buildOperationalEvents(
+  info: ONT | null,
+  optical: OpticalInfo | null,
+  servicePorts: ServicePort[]
+): OperationalEvent[] {
+  if (!info) {
+    return [];
+  }
+
+  const events: OperationalEvent[] = [];
+  const rxPower = parseNumeric(optical?.rx_power_dbm);
+  const txPower = parseNumeric(optical?.tx_power_dbm);
+
+  if (info.last_up_time) {
+    events.push({
+      timestamp: info.last_up_time,
+      title: "ONT online",
+      details: info.online_duration
+        ? `Tempo de atividade atual: ${compactDuration(info.online_duration)}`
+        : "Última subida registrada pela OLT.",
+      status: info.run_state === "online" ? "Normal" : "Warning",
+    });
+  }
+
+  if (info.last_down_time || info.last_down_cause) {
+    events.push({
+      timestamp: info.last_down_time ?? "Sem timestamp",
+      title: "Última queda",
+      details: info.last_down_cause || "Sem causa informada pela OLT.",
+      status: info.last_down_cause && info.last_down_cause !== "-" ? "Warning" : "Normal",
+    });
+  }
+
+  if (info.last_restart_reason && info.last_restart_reason !== "-") {
+    events.push({
+      timestamp: info.last_up_time ?? "Sem timestamp",
+      title: "Reinicialização registrada",
+      details: info.last_restart_reason,
+      status: "Warning",
+    });
+  }
+
+  if (Number.isFinite(rxPower)) {
+    events.push({
+      timestamp: "Snapshot atual",
+      title: "Leitura óptica RX",
+      details:
+        rxPower <= -27
+          ? `RX em ${rxPower.toFixed(2)} dBm, fora da faixa recomendada.`
+          : `RX em ${rxPower.toFixed(2)} dBm dentro da leitura atual.`,
+      status: rxPower <= -27 ? "Critical" : rxPower <= -24 ? "Warning" : "Normal",
+    });
+  }
+
+  if (Number.isFinite(txPower)) {
+    events.push({
+      timestamp: "Snapshot atual",
+      title: "Leitura óptica TX",
+      details: `Transmissão da ONT em ${txPower.toFixed(2)} dBm.`,
+      status: "Normal",
+    });
+  }
+
+  if (servicePorts.length > 0) {
+    const first = servicePorts[0];
+    events.push({
+      timestamp: "Sessão atual",
+      title: "Service-port ativo",
+      details: `VLAN ${first.vlan} via GEM Port ${first.gemport}${servicePorts.length > 1 ? ` (+${servicePorts.length - 1} adicionais)` : ""}.`,
+      status: first.state || "Normal",
+    });
+  }
+
+  return events.slice(0, 6);
 }

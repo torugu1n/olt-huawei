@@ -78,6 +78,24 @@ db.exec(`
     updated_at          TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (template_id) REFERENCES provision_template_catalog(id)
   );
+
+  CREATE TABLE IF NOT EXISTS app_settings (
+    setting_key     TEXT PRIMARY KEY,
+    setting_value   TEXT NOT NULL,
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS olt_logs (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    source          TEXT NOT NULL,
+    level           TEXT NOT NULL DEFAULT 'info',
+    message         TEXT NOT NULL,
+    detail          TEXT,
+    raw_output      TEXT,
+    metadata_json   TEXT,
+    fingerprint     TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const templateCount = db.prepare('SELECT COUNT(*) AS count FROM provision_templates').get().count;

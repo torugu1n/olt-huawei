@@ -125,6 +125,17 @@ export interface AuditLog {
   timestamp: string;
 }
 
+export interface OltLog {
+  id: number;
+  source: string;
+  level: "info" | "warning" | "error" | string;
+  message: string;
+  detail: string | null;
+  raw_output?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+}
+
 export interface ProvisionForm {
   slot: number;
   port: number;
@@ -145,6 +156,7 @@ export interface DashboardSummary {
   boards: Board[];
   alarms: Alarm[];
   autofind: AutofindONT[];
+  recent_logs?: OltLog[];
   gpon_ports?: Array<{
     frame: number;
     slot: number;
@@ -157,6 +169,11 @@ export interface DashboardSummary {
     tx_bias_current_ma: string;
     supply_voltage_v: string;
     tx_power_dbm: string;
+    if_name?: string;
+    if_descr?: string;
+    if_alias?: string;
+    in_bps?: number;
+    out_bps?: number;
   }>;
   onts_total: number;
   onts_online: number;
@@ -169,6 +186,12 @@ export interface DashboardSummary {
     avg_port_tx_power_dbm: number | null;
     boards_active: number;
     boards_faulty: number;
+    cpu_percent?: number | null;
+    memory_percent?: number | null;
+    avg_temperature_c?: number | null;
+    total_uplink_in_gbps?: number | null;
+    total_uplink_out_gbps?: number | null;
+    olt_uptime_seconds?: number | null;
   };
 }
 
@@ -216,4 +239,15 @@ export interface TemplateBinding {
   template_description: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface AppSettings {
+  OLT_HOST: string;
+  OLT_PORT: number;
+  OLT_USERNAME: string;
+  OLT_PASSWORD: string;
+  OLT_ENABLE_PASSWORD: string;
+  OLT_NAME: string;
+  OLT_TIMEOUT: number;
+  OLT_SESSION_BOOTSTRAP_COMMANDS: string;
 }

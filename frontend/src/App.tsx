@@ -8,10 +8,11 @@ import { Provision } from "./pages/Provision";
 import { ONTs } from "./pages/ONTs";
 import { Alarms } from "./pages/Alarms";
 import { Terminal } from "./pages/Terminal";
-import { AuditLogPage } from "./pages/AuditLog";
+import { LogsPage } from "./pages/Logs";
 import { Users } from "./pages/Users";
 import { TemplatesPage } from "./pages/Templates";
 import { ONTDetail } from "./pages/ONTDetail";
+import { SettingsPage } from "./pages/Settings";
 import { useUISettings } from "./context/UISettingsContext";
 
 export default function App() {
@@ -41,9 +42,11 @@ export default function App() {
           <Route path="/autofind" element={<Autofind />} />
           <Route path="/provision" element={<Provision />} />
           <Route path="/terminal" element={<Terminal />} />
-          <Route path="/audit" element={<AuditLogPage />} />
+          <Route path="/logs" element={<LogsPage />} />
+          <Route path="/audit" element={<Navigate to="/logs" replace />} />
           {user?.is_admin && <Route path="/users" element={<Users />} />}
           {user?.is_admin && <Route path="/templates" element={<TemplatesPage />} />}
+          {user?.is_admin && <Route path="/settings" element={<SettingsPage />} />}
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -106,11 +106,11 @@ export function ONTs() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-              Inventory
+              Inventário
             </div>
             <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">ONTs registradas</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
-              Console de inventario da rede GPON, com pesquisa rapida, status operacional e atalhos para manutencao.
+              Console de inventário da rede GPON, com pesquisa rápida, status operacional e atalhos para manutenção.
             </p>
           </div>
 
@@ -126,15 +126,15 @@ export function ONTs() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="text-[11px] uppercase tracking-[0.22em] text-ink-400">Pesquisa operacional</div>
-            <div className="mt-1 text-sm text-ink-500">Filtre por serial, descricao ou localizacao da PON.</div>
-            {refreshing && <div className="mt-2 text-xs text-ink-400">Atualizando inventario em segundo plano...</div>}
+            <div className="mt-1 text-sm text-ink-500">Filtre por serial, descrição ou localização da PON.</div>
+            {refreshing && <div className="mt-2 text-xs text-ink-400">Atualizando inventário em segundo plano...</div>}
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar SN, descricao, PON..."
+              placeholder="Buscar SN, descrição, PON..."
               className="input min-w-[18rem]"
             />
             <button onClick={load} className="action-primary">
@@ -147,7 +147,7 @@ export function ONTs() {
       {error && <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
       {loading ? (
-        <div className="panel-muted px-5 py-4 text-sm text-ink-500">Consultando inventario da OLT...</div>
+        <div className="panel-muted px-5 py-4 text-sm text-ink-500">Consultando inventário da OLT...</div>
       ) : filtered.length === 0 ? (
         <div className="panel px-8 py-10 text-center text-ink-400">
           {search ? "Nenhuma ONT encontrada para a busca atual." : "Nenhuma ONT registrada na leitura atual."}
@@ -161,11 +161,11 @@ export function ONTs() {
                   <th className="px-5 py-4">PON</th>
                   <th className="px-5 py-4">ONT ID</th>
                   <th className="px-5 py-4">Serial</th>
-                  <th className="px-5 py-4">Descricao</th>
+                  <th className="px-5 py-4">Descrição</th>
                   <th className="px-5 py-4">Distancia</th>
                   <th className="px-5 py-4">Status</th>
                   <th className="px-5 py-4">Config</th>
-                  <th className="px-5 py-4 text-right">Acoes</th>
+                  <th className="px-5 py-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>

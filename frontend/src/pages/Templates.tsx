@@ -181,7 +181,7 @@ export function TemplatesPage() {
       <header className="panel px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="eyebrow mb-3">Provision templates</div>
+            <div className="eyebrow mb-3">Templates de provisão</div>
             <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Templates</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-500">
               Crie templates reutilizáveis e aplique por faixa de PON. O `Provisionar` herda automático pela PON, e o `Autofind` permite seleção assistida antes da provisão direta.
@@ -285,7 +285,7 @@ export function TemplatesPage() {
             </Field>
           </div>
 
-          <div className="mt-4 rounded-2xl border border-ink-200 bg-[rgba(255,254,251,0.94)] px-4 py-4">
+          <div className="mt-4 rounded-2xl border border-ink-200 bg-ink-50/60 px-4 py-4">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">Prévia do vínculo</div>
             {selectedTemplatePreview ? (
               <div className="mt-2 space-y-1 text-sm text-ink-600">
@@ -308,13 +308,13 @@ export function TemplatesPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="panel overflow-hidden">
-          <div className="border-b border-ink-200 bg-[rgba(246,247,245,0.9)] px-5 py-4">
+          <div className="border-b border-ink-200 bg-ink-50/80 px-5 py-4">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">Templates cadastrados</div>
             <div className="mt-1 text-sm text-ink-600">{loading ? "Carregando..." : `${templates.length} template(s) disponíveis.`}</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[46rem] text-sm">
-              <thead className="border-b border-ink-200 bg-[rgba(255,254,251,0.96)]">
+              <thead className="border-b border-ink-200 bg-ink-50/60">
                 <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
                   <th className="px-4 py-3">Template</th>
                   <th className="px-4 py-3">Line</th>
@@ -327,7 +327,7 @@ export function TemplatesPage() {
               </thead>
               <tbody>
                 {templates.map((template) => (
-                  <tr key={template.id} className="border-b border-ink-100 bg-[rgba(255,255,252,0.95)] last:border-0">
+                  <tr key={template.id} className="border-b border-ink-100 last:border-0 transition hover:bg-ink-50/40">
                     <td className="px-4 py-4">
                       <div className="font-medium text-ink-800">{template.name}</div>
                       <div className="mt-1 text-xs text-ink-500">{template.description || "Sem descrição operacional"}</div>
@@ -378,13 +378,13 @@ export function TemplatesPage() {
         </section>
 
         <section className="panel overflow-hidden">
-          <div className="border-b border-ink-200 bg-[rgba(246,247,245,0.9)] px-5 py-4">
+          <div className="border-b border-ink-200 bg-ink-50/80 px-5 py-4">
             <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-400">Vínculos por faixa de PON</div>
             <div className="mt-1 text-sm text-ink-600">{loading ? "Carregando..." : `${bindings.length} vínculo(s) ativos.`}</div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[38rem] text-sm">
-              <thead className="border-b border-ink-200 bg-[rgba(255,254,251,0.96)]">
+              <thead className="border-b border-ink-200 bg-ink-50/60">
                 <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
                   <th className="px-4 py-3">Slot</th>
                   <th className="px-4 py-3">Faixa de PON</th>
@@ -394,7 +394,7 @@ export function TemplatesPage() {
               </thead>
               <tbody>
                 {bindings.map((binding) => (
-                  <tr key={binding.id} className="border-b border-ink-100 bg-[rgba(255,255,252,0.95)] last:border-0">
+                  <tr key={binding.id} className="border-b border-ink-100 last:border-0 transition hover:bg-ink-50/40">
                     <td className="px-4 py-4 font-mono text-ink-700">{binding.slot}</td>
                     <td className="px-4 py-4 font-mono text-ink-700">0/{binding.slot}/{binding.pon_start} até 0/{binding.slot}/{binding.pon_end}</td>
                     <td className="px-4 py-4">

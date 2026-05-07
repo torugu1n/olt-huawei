@@ -68,13 +68,13 @@ export function Autofind() {
       ont.template_srvprofile_id == null ||
       ont.template_gemport == null
     ) {
-      setError(`Nao existe template automatico salvo para a PON 0/1/${ont.port}.`);
+      setError(`Não existe template automático salvo para a PON 0/1/${ont.port}.`);
       return;
     }
 
     const finalDescription = sanitizeDescription(description, ont.port, ont.sn);
     if (!finalDescription) {
-      setError("Informe uma descricao valida para a ONT.");
+      setError("Informe uma descrição válida para a ONT.");
       return;
     }
 
@@ -99,7 +99,7 @@ export function Autofind() {
       setDescription("");
       await load();
     } catch (e: any) {
-      setError(e?.response?.data?.detail ?? "Erro ao provisionar ONT diretamente");
+      setError(e?.response?.data?.detail ?? "Erro ao provisionar ONT diretamente.");
     } finally {
       setActionSn(null);
     }
@@ -115,7 +115,7 @@ export function Autofind() {
             <div className="eyebrow mb-3">Discovery queue</div>
             <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Autofind</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
-              ONTs detectadas pela OLT e prontas para seguir o fluxo de provisao com template automatico por PON.
+              ONTs detectadas pela OLT e prontas para seguir o fluxo de provisão com template automático por PON.
             </p>
           </div>
           <div className="flex gap-2">
@@ -186,7 +186,7 @@ export function Autofind() {
                           </button>
                           <Link
                             to={`/provision?sn=${ont.sn}&port=${ont.port}`}
-                            className="font-mono rounded-full border border-ink-200 bg-white/70 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-white"
+                            className="font-mono rounded-full border border-ink-200 bg-ink-50 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-ink-100"
                           >
                             Editar
                           </Link>
@@ -199,7 +199,7 @@ export function Autofind() {
                         <td colSpan={7} className="px-5 py-5">
                           <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                             <div>
-                              <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">Descricao obrigatoria</div>
+                              <div className="mb-2 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-400">Descrição obrigatória</div>
                               <label className="mb-1 block text-sm font-medium text-ink-700">Nome operacional da ONT</label>
                               <input
                                 type="text"

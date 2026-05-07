@@ -299,6 +299,45 @@ export function parseGponPortStates(output) {
   return ports;
 }
 
+export function parseSysUptime(output) {
+  const days    = Number(output.match(/(\d+)\s*day/i)?.[1]    ?? 0);
+  const hours   = Number(output.match(/(\d+)\s*hour/i)?.[1]   ?? 0);
+  const minutes = Number(output.match(/(\d+)\s*minute/i)?.[1] ?? 0);
+  const seconds = Number(output.match(/(\d+)\s*second/i)?.[1] ?? 0);
+  if (days === 0 && hours === 0 && minutes === 0 && seconds === 0) return null;
+  return days * 86400 + hours * 3600 + minutes * 60 + seconds;
+}
+
+export function parseTemperatureAll(output) {
+  const results = [];
+  let headerPassed = false;
+
+  for (const line of output.split('\n')) {
+    if (/^-+/.test(line.trim())) { headerPassed = true; continue; }
+    if (!headerPassed) continue;
+
+    const m = line.match(/^\s*(\d+)\s+(\S+)\s+([-\d]+)\s+(\S+)/);
+    if (m) {
+      const temp = Number(m[3]);
+      if (Number.isFinite(temp) && temp > -50 && temp < 200) {
+        results.push({ slot: Number(m[1]), board: m[2], temperature_c: temp, state: m[4] });
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    const m = output.match(/Temperature\s*[:(]\s*([-\d]+)\s*(?:C|°C)?/i);
+    if (m) {
+      const temp = Number(m[1]);
+      if (Number.isFinite(temp) && temp > -50 && temp < 200) {
+        results.push({ slot: 0, board: '', temperature_c: temp, state: '' });
+      }
+    }
+  }
+
+  return results;
+}
+
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

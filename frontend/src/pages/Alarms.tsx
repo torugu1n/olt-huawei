@@ -39,7 +39,7 @@ export function Alarms() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="mb-3 inline-flex items-center rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.24em] text-brand-700">
-              Active alarms
+              Alarmes ativos
             </div>
             <h2 className="text-3xl font-bold text-ink-900 md:text-4xl">Alarmes ativos</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
@@ -80,7 +80,7 @@ export function Alarms() {
       ) : visible.length === 0 ? (
         <div className="panel px-8 py-10 text-center">
           <div className="text-sm font-medium text-ink-900">Nenhum alarme para o filtro atual.</div>
-          <div className="mt-2 text-sm text-ink-500">{filter === "all" ? "A leitura atual nao trouxe eventos ativos." : `Sem alarmes ${filter}.`}</div>
+          <div className="mt-2 text-sm text-ink-500">{filter === "all" ? "A leitura atual não trouxe eventos ativos." : `Sem alarmes ${filter}.`}</div>
         </div>
       ) : (
         <section className="panel overflow-hidden">
@@ -91,7 +91,7 @@ export function Alarms() {
                   <th className="px-5 py-4">Seq</th>
                   <th className="px-5 py-4">Severidade</th>
                   <th className="px-5 py-4">Alarme</th>
-                  <th className="px-5 py-4">Localizacao</th>
+                  <th className="px-5 py-4">Localização</th>
                   <th className="px-5 py-4">Ocorrido em</th>
                 </tr>
               </thead>

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700;800&family=Schibsted+Grotesk:wght@500;600;700;800&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -46,7 +46,11 @@
   }
 
   html {
-    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "ss01" 1, "cv01" 1, "cv11" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
@@ -56,7 +60,7 @@
   }
 
   h1, h2, h3, .font-display {
-    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-family: "Schibsted Grotesk", "Public Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
   .material-symbols-outlined {
@@ -66,6 +70,136 @@
   ::selection {
     background: rgba(66, 98, 148, 0.18);
   }
+
+  /* ── Dark mode ──────────────────────────────────────────────────────────── */
+  html.dark {
+    /* ink scale: invertido para texto claro em fundo escuro */
+    --ink-50:  9 14 28;
+    --ink-100: 16 24 44;
+    --ink-200: 26 38 64;
+    --ink-300: 40 58 88;
+    --ink-400: 64 82 110;
+    --ink-500: 138 158 182;
+    --ink-600: 165 183 205;
+    --ink-700: 198 214 230;
+    --ink-800: 218 228 240;
+    --ink-900: 236 242 250;
+
+    /* surfaces: navy profundo */
+    --surface:        14 20 38;
+    --surface-muted:  9 13 26;
+    --surface-strong: 20 30 54;
+    --line:           26 38 62;
+    --line-strong:    40 58 90;
+
+    color: rgb(var(--ink-900));
+    background:
+      radial-gradient(circle at top right, rgba(99, 102, 241, 0.11), transparent 28rem),
+      radial-gradient(circle at bottom left, rgba(67, 56, 202, 0.07), transparent 32rem),
+      linear-gradient(180deg, rgb(8 12 22) 0%, rgb(5 8 16) 100%);
+  }
+
+  html.dark body {
+    color: rgb(var(--ink-900));
+  }
+
+  html.dark ::selection {
+    background: rgba(99, 102, 241, 0.35);
+  }
+
+  /* Todos os elementos bg-white viram --surface no dark
+     (exceto o knob do toggle que usa style inline) */
+  html.dark [class*="bg-white"] {
+    background-color: rgb(var(--surface)) !important;
+  }
+
+  /* Panels: sombra adaptada ao fundo escuro */
+  html.dark .panel {
+    box-shadow: 0 4px 24px -8px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+
+  html.dark .panel-muted {
+    box-shadow: none;
+  }
+
+  /* Sidebar: levemente mais escura que os panels para hierarquia */
+  html.dark aside {
+    background-color: rgb(8 12 22) !important;
+    border-color: rgb(var(--line));
+  }
+
+  /* Inputs */
+  html.dark .input,
+  html.dark select {
+    background: rgb(var(--surface-muted) / 0.96);
+    border-color: rgb(var(--line));
+    box-shadow: none;
+  }
+
+  /* Checkbox */
+  html.dark input[type="checkbox"] {
+    background-color: rgb(var(--surface-muted));
+    border-color: rgb(var(--line-strong));
+  }
+
+  html.dark input[type="checkbox"]:checked {
+    background-color: rgb(var(--brand-600));
+    border-color: rgb(var(--brand-600));
+  }
+
+  /* Scrollbar */
+  html.dark {
+    scrollbar-color: rgb(var(--line-strong)) transparent;
+  }
+
+  /* ── Semantic color overrides ─────────────────────────────────────────────
+     Cobre todas as variações de opacidade (bg-red-50, bg-red-50/65, etc.)
+     sem necessidade de tocar cada componente individualmente.
+  ── */
+
+  /* Danger / error */
+  html.dark [class*="bg-red-50"]       { background-color: rgba(185, 28,  28, 0.18) !important; }
+  html.dark [class*="bg-red-100"]      { background-color: rgba(185, 28,  28, 0.28) !important; }
+  html.dark [class*="border-red-200"]  { border-color: rgba(239, 68,  68, 0.35) !important; }
+  html.dark [class*="text-red-700"],
+  html.dark [class*="text-red-600"]    { color: rgb(252, 165, 165) !important; }
+
+  /* Brand / primary */
+  html.dark [class*="bg-brand-50"]     { background-color: rgb(var(--brand-950) / 0.45) !important; }
+  html.dark [class*="bg-brand-100"]    { background-color: rgb(var(--brand-950) / 0.6)  !important; }
+  html.dark [class*="border-brand-200"]{ border-color: rgb(var(--brand-700) / 0.45) !important; }
+  html.dark [class*="border-brand-100"]{ border-color: rgb(var(--brand-800) / 0.45) !important; }
+  html.dark [class*="text-brand-700"],
+  html.dark [class*="text-brand-800"]  { color: rgb(var(--brand-400)) !important; }
+
+  /* Success / emerald */
+  html.dark [class*="bg-emerald-50"]      { background-color: rgba(6,  78,  59, 0.22) !important; }
+  html.dark [class*="border-emerald-200"] { border-color: rgba(16, 185, 129, 0.3) !important; }
+  html.dark [class*="text-emerald-700"],
+  html.dark [class*="text-emerald-800"]   { color: rgb(110, 231, 183) !important; }
+
+  /* Warning / amber */
+  html.dark [class*="bg-amber-50"]     { background-color: rgba(120, 53,  15, 0.22) !important; }
+  html.dark [class*="bg-amber-100"]    { background-color: rgba(120, 53,  15, 0.35) !important; }
+  html.dark [class*="border-amber-200"]{ border-color: rgba(217, 119, 6,  0.35) !important; }
+  html.dark [class*="text-amber-800"]  { color: rgb(252, 211,  77) !important; }
+
+  /* Warning / yellow */
+  html.dark [class*="bg-yellow-50"]      { background-color: rgba(113, 63, 18, 0.22) !important; }
+  html.dark [class*="border-yellow-200"] { border-color: rgba(202, 138, 4, 0.35) !important; }
+  html.dark [class*="text-yellow-800"]   { color: rgb(254, 240, 138) !important; }
+
+  /* Info / sky */
+  html.dark [class*="bg-sky-50"]      { background-color: rgba(12,  74, 110, 0.22) !important; }
+  html.dark [class*="border-sky-200"] { border-color: rgba(14, 165, 233, 0.3) !important; }
+  html.dark [class*="text-sky-800"]   { color: rgb(125, 211, 252) !important; }
+
+  /* Hover states — botoes coloridos */
+  html.dark [class*="hover:bg-red-100"]:hover    { background-color: rgba(185, 28, 28, 0.30) !important; }
+  html.dark [class*="hover:bg-brand-100"]:hover  { background-color: rgb(var(--brand-950) / 0.65) !important; }
+  html.dark [class*="hover:bg-amber-100"]:hover  { background-color: rgba(120, 53, 15, 0.38) !important; }
+  html.dark [class*="hover:bg-emerald-100"]:hover{ background-color: rgba(6, 78, 59, 0.35) !important; }
+  html.dark [class*="hover:bg-ink-50"]:hover     { background-color: rgb(var(--ink-100) / 0.6) !important; }
 }
 
 @layer components {
@@ -75,6 +209,7 @@
     background: rgb(var(--surface) / 0.96);
     color: rgb(var(--ink-900));
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
   select {
@@ -116,6 +251,7 @@
   .action-primary {
     @apply cursor-pointer rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-100/50 disabled:cursor-not-allowed;
     background: rgb(var(--brand-600));
+    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
   .action-primary:hover {
@@ -127,6 +263,7 @@
     border: 1px solid rgb(var(--line));
     background: rgb(var(--surface) / 0.8);
     color: rgb(var(--ink-700));
+    font-family: "Public Sans", ui-sans-serif, system-ui, sans-serif;
   }
 
   .action-secondary:hover {

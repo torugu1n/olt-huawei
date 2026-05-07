@@ -32,6 +32,8 @@ export const createUser = (data: object) => api.post("/auth/users", data);
 export const deleteUser = (id: number) => api.delete(`/auth/users/${id}`);
 export const toggleUser = (id: number) => api.put(`/auth/users/${id}/toggle`);
 export const changePassword = (data: object) => api.post("/auth/change-password", data);
+export const getSettings = () => api.get("/settings");
+export const updateSettings = (data: object) => api.put("/settings", data);
 
 // ── OLT ───────────────────────────────────────────────────────────────────────
 export const getOltStatus = () => api.get("/olt/status");
@@ -40,6 +42,7 @@ export const getOltVersion = () => api.get("/olt/version");
 export const getBoards = () => api.get("/olt/boards");
 export const getAlarms = () => api.get("/olt/alarms");
 export const getAutofind = () => api.get("/olt/autofind");
+export const getOltLogs = (params?: object) => api.get("/olt/logs", { params });
 export const getProvisionTemplate = (port: number, slot = 1) =>
   api.get("/olt/provision-template", { params: { port, slot } });
 export const getProvisionTemplates = (slot = 1) =>

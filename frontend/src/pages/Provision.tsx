@@ -79,7 +79,7 @@ export function Provision() {
         <div className="panel overflow-hidden px-6 py-6 md:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-              <div className="eyebrow mb-3">Provision completed</div>
+              <div className="eyebrow mb-3">Provisão concluída</div>
               <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900">ONT provisionada com sucesso</h2>
               <p className="mt-2 text-sm text-ink-500">
                 ONT ID {result.ont_id} atribuida para SN <span className="font-mono text-ink-800">{form.sn}</span> na PON 0/{form.slot}/{form.port}.
@@ -105,7 +105,7 @@ export function Provision() {
             Provisionar outra
           </button>
           <button onClick={() => navigate("/onts")} className="action-secondary">
-            Ver inventario
+            Ver inventário
           </button>
         </div>
       </div>
@@ -117,7 +117,7 @@ export function Provision() {
       <header className="panel px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="eyebrow mb-3">Provision workflow</div>
+            <div className="eyebrow mb-3">Fluxo de provisão</div>
             <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Provisionar ONT</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
               Fluxo operacional para registrar a ONT, aplicar native VLAN e criar o service-port com base no template da PON.
@@ -150,7 +150,7 @@ export function Provision() {
 
       <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
-          <FormPanel title="Localizacao na OLT" subtitle="Frame fixo, slot operacional 1 e escolha da PON.">
+          <FormPanel title="Localização na OLT" subtitle="Frame fixo, slot operacional 1 e escolha da PON.">
             <div className="grid grid-cols-3 gap-3">
               <Field label="Frame" hint="Sempre 0">
                 <input type="number" value={0} disabled className="input bg-white/60 text-ink-400" />
@@ -164,7 +164,7 @@ export function Provision() {
             </div>
           </FormPanel>
 
-          <FormPanel title="Identidade da ONT" subtitle="Serial e descricao operacional apresentada no inventario.">
+          <FormPanel title="Identidade da ONT" subtitle="Serial e descrição operacional apresentada no inventário.">
             <Field label="Serial Number" hint="4 letras + 8 hex">
               <input
                 type="text"
@@ -177,7 +177,7 @@ export function Provision() {
                 required
               />
             </Field>
-            <Field label="Descricao" hint="Maximo de 64 caracteres">
+            <Field label="Descrição" hint="Máximo de 64 caracteres">
               <input
                 type="text"
                 value={form.description}
@@ -192,7 +192,7 @@ export function Provision() {
         </div>
 
         <div className="space-y-6">
-          <FormPanel title="Template aplicado" subtitle="Esses valores sao herdados da PON, mas ainda podem ser ajustados antes do envio.">
+          <FormPanel title="Template aplicado" subtitle="Esses valores são herdados da PON, mas ainda podem ser ajustados antes do envio.">
             {resolvedTemplate?.template_name && (
               <div className="rounded-[1.25rem] border border-brand-200 bg-brand-50/60 px-4 py-3 text-sm text-brand-800">
                 Template ativo: <span className="font-semibold">{resolvedTemplate.template_name}</span>
@@ -201,13 +201,13 @@ export function Provision() {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricField label="Line profile" value={form.lineprofile_id} />
               <MetricField label="Service profile" value={form.srvprofile_id} />
-              <MetricField label="VLAN de servico" value={form.vlan_id} />
+              <MetricField label="VLAN de serviço" value={form.vlan_id} />
               <MetricField label="User VLAN" value={form.user_vlan} />
               <MetricField label="GEM port" value={form.gemport} />
             </div>
           </FormPanel>
 
-          <FormPanel title="Ajustes manuais" subtitle="Use apenas quando a PON exigir override do template padrao.">
+          <FormPanel title="Ajustes manuais" subtitle="Use apenas quando a PON exigir override do template padrão.">
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Line Profile ID">
                 <input type="number" min={1} max={1023} value={form.lineprofile_id} onChange={set("lineprofile_id")} className="input" required />

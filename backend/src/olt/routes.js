@@ -16,6 +16,7 @@ import {
   updateTemplateCatalogItem,
 } from './provisionTemplates.js';
 import { writeAudit } from '../audit/routes.js';
+import { listOltLogs, writeOltLog } from './logs.js';
 
 export default async function oltRoutes(fastify) {
   const auth = { onRequest: [fastify.authenticate] };
@@ -100,6 +101,13 @@ export default async function oltRoutes(fastify) {
 
   fastify.get('/dashboard-summary', auth, async () => {
     return cmd.getDashboardSummary();
+  });
+
+  fastify.get('/logs', auth, async (req) => {
+    const { limit = 100, offset = 0, source, level } = req.query;
+    return {
+      logs: listOltLogs({ limit, offset, source, level }),
+    };
   });
 
   fastify.get('/provision-template', auth, async (req) => {
@@ -262,6 +270,14 @@ export default async function oltRoutes(fastify) {
     const { raw: rawProv, ontId } = await cmd.provisionOnt({ slot, port, sn, lineprofileId, srvprofileId, description });
     if (!ontId) {
       writeAudit(req.user.sub, 'provision_ont', detail, false);
+      writeOltLog({
+        source: 'provision_ont',
+        level: 'error',
+        message: 'Falha ao provisionar ONT na OLT',
+        detail,
+        rawOutput: rawProv,
+        metadata: { username: req.user.sub, slot, port, sn },
+      });
       return reply.code(500).send({ detail: `ONT não registrada. Output da OLT:\n${rawProv}` });
     }
 
@@ -269,6 +285,14 @@ export default async function oltRoutes(fastify) {
     const rawSp = await cmd.addServicePort({ vlanId, slot, port, ontId, gemport, userVlan });
     cmd.clearOltCache();
     writeAudit(req.user.sub, 'provision_ont', detail + ` ont_id=${ontId}`, true);
+    writeOltLog({
+      source: 'provision_ont',
+      level: 'info',
+      message: 'ONT provisionada com sucesso',
+      detail: `${detail} ont_id=${ontId}`,
+      rawOutput: [rawProv, rawNative, rawSp].filter(Boolean).join('\n\n'),
+      metadata: { username: req.user.sub, slot, port, ontId, vlanId, userVlan, gemport },
+    });
     return { success: true, ont_id: ontId, raw: { provision: rawProv, native_vlan: rawNative, service_port: rawSp } };
   });
 
@@ -285,6 +309,14 @@ export default async function oltRoutes(fastify) {
     const raw    = await cmd.addServicePort({ vlanId, slot, port, ontId, gemport: gem, userVlan: uVlan });
     cmd.clearOltCache();
     writeAudit(req.user.sub, 'add_service_port', detail, true);
+    writeOltLog({
+      source: 'service_port',
+      level: 'info',
+      message: 'Service-port adicionado',
+      detail,
+      rawOutput: raw,
+      metadata: { username: req.user.sub, slot, port, ontId, vlanId, userVlan: uVlan, gemport: gem },
+    });
     return { success: true, raw };
   });
 
@@ -293,6 +325,14 @@ export default async function oltRoutes(fastify) {
     const raw = await cmd.deleteServicePort(index);
     cmd.clearOltCache();
     writeAudit(req.user.sub, 'delete_service_port', `index=${index}`, true);
+    writeOltLog({
+      source: 'service_port',
+      level: 'warning',
+      message: 'Service-port removido',
+      detail: `index=${index}`,
+      rawOutput: raw,
+      metadata: { username: req.user.sub, index },
+    });
     return { success: true, raw };
   });
 
@@ -303,6 +343,14 @@ export default async function oltRoutes(fastify) {
     const raw = await cmd.deleteOnt(+slot, +port, +ontId);
     cmd.clearOltCache();
     writeAudit(req.user.sub, 'delete_ont', `0/${slot}/${port}/${ontId}`, true);
+    writeOltLog({
+      source: 'ont_lifecycle',
+      level: 'warning',
+      message: 'ONT removida da OLT',
+      detail: `0/${slot}/${port}/${ontId}`,
+      rawOutput: raw,
+      metadata: { username: req.user.sub, slot: +slot, port: +port, ontId: +ontId },
+    });
     return { success: true, raw };
   });
 
@@ -313,6 +361,14 @@ export default async function oltRoutes(fastify) {
     const raw = await cmd.rebootOnt(+slot, +port, +ontId);
     cmd.clearOltCache();
     writeAudit(req.user.sub, 'reboot_ont', `0/${slot}/${port}/${ontId}`, true);
+    writeOltLog({
+      source: 'ont_lifecycle',
+      level: 'info',
+      message: 'Reboot remoto de ONT executado',
+      detail: `0/${slot}/${port}/${ontId}`,
+      rawOutput: raw,
+      metadata: { username: req.user.sub, slot: +slot, port: +port, ontId: +ontId },
+    });
     return { success: true, raw };
   });
 }

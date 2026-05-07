@@ -16,7 +16,7 @@ export function Users() {
       const { data } = await listUsers();
       setUsers(data);
     } catch (e: any) {
-      setError(e?.response?.data?.detail ?? "Erro ao carregar usuarios");
+      setError(e?.response?.data?.detail ?? "Erro ao carregar usuários");
     } finally {
       setLoading(false);
     }
@@ -35,12 +35,12 @@ export function Users() {
       setShowForm(false);
       load();
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? "Erro ao criar usuario");
+      setError(err?.response?.data?.detail ?? "Erro ao criar usuário");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Excluir este usuario?")) return;
+    if (!confirm("Excluir este usuário?")) return;
     await deleteUser(id);
     load();
   };
@@ -55,14 +55,14 @@ export function Users() {
       <header className="panel px-6 py-6 md:px-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="eyebrow mb-3">Access control</div>
-            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Usuarios</h2>
+            <div className="eyebrow mb-3">Controle de acesso</div>
+            <h2 className="font-display text-3xl font-semibold tracking-[-0.03em] text-ink-900 md:text-4xl">Usuários</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-500">
-              Gestao de acesso da ferramenta, com operacoes administrativas centralizadas e estados de conta bem visiveis.
+              Gestão de acesso da ferramenta, com operações administrativas centralizadas e estados de conta bem visíveis.
             </p>
           </div>
           <button onClick={() => setShowForm((current) => !current)} className={showForm ? "action-secondary" : "action-primary"}>
-            {showForm ? "Fechar formulario" : "Novo usuario"}
+            {showForm ? "Fechar formulário" : "Novo usuário"}
           </button>
         </div>
       </header>
@@ -71,7 +71,7 @@ export function Users() {
 
       {showForm && (
         <form onSubmit={handleCreate} className="panel grid gap-4 px-6 py-5 lg:grid-cols-2">
-          <Field label="Usuario">
+          <Field label="Usuário">
             <input className="input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
           </Field>
           <Field label="Nome completo">
@@ -91,25 +91,25 @@ export function Users() {
             <label htmlFor="is_admin" className="text-sm font-medium text-ink-700">Conceder perfil administrativo</label>
           </div>
           <div className="lg:col-span-2 flex gap-3">
-            <button type="submit" className="action-primary">Criar usuario</button>
+            <button type="submit" className="action-primary">Criar usuário</button>
             <button type="button" onClick={() => setShowForm(false)} className="action-secondary">Cancelar</button>
           </div>
         </form>
       )}
 
       {loading ? (
-        <div className="panel-muted px-5 py-4 text-sm text-ink-500">Carregando usuarios...</div>
+        <div className="panel-muted px-5 py-4 text-sm text-ink-500">Carregando usuários...</div>
       ) : (
         <section className="panel overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[60rem] text-sm">
               <thead className="border-b border-ink-100 bg-white/65">
                 <tr className="font-mono text-left text-[11px] uppercase tracking-[0.18em] text-ink-400">
-                  <th className="px-5 py-4">Usuario</th>
+                  <th className="px-5 py-4">Usuário</th>
                   <th className="px-5 py-4">Nome</th>
                   <th className="px-5 py-4">Perfil</th>
                   <th className="px-5 py-4">Status</th>
-                  <th className="px-5 py-4 text-right">Acoes</th>
+                  <th className="px-5 py-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>

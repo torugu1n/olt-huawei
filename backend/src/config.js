@@ -41,6 +41,11 @@ function bootstrapCommandsFromEnv() {
     .filter(Boolean);
 }
 
+function booleanFromEnv(value, fallback = false) {
+  if (value == null || value === '') return fallback;
+  return ['1', 'true', 'yes', 'on'].includes(String(value).trim().toLowerCase());
+}
+
 export default {
   SECRET_KEY:                process.env.SECRET_KEY      || 'troque-esta-chave-em-producao',
   TOKEN_EXPIRE_HOURS:        Number(process.env.TOKEN_EXPIRE_HOURS || 8),

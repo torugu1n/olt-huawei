@@ -1,5 +1,6 @@
 import { sendCommand, sendConfig, sendConfigBatch, testConnection } from './ssh.js';
 import * as parser from './parser.js';
+import { listOltLogs, logDashboardSummary, writeOltLog } from './logs.js';
 
 const cache = new Map();
 const TTL = {
@@ -14,6 +15,7 @@ const TTL = {
   ontWan: 30_000,
   ontVersion: 10 * 60_000,
   dashboard: 60_000,
+  systemMetrics: 2 * 60_000,
 };
 
 async function withCache(key, ttlMs, loader) {
@@ -306,25 +308,40 @@ export async function rebootOnt(slot, port, ontId) {
   );
 }
 
+export async function getSystemMetrics() {
+  return withCache('system-metrics', TTL.systemMetrics, async () => {
+    const [uptimeRaw, tempRaw] = await Promise.allSettled([
+      runShowCommand(['display sysuptime'], 10_000),
+      runShowCommand(['display temperature all'], 10_000),
+    ]);
+
+    const uptime    = uptimeRaw.status === 'fulfilled' ? parser.parseSysUptime(uptimeRaw.value)    : null;
+    const tempSlots = tempRaw.status   === 'fulfilled' ? parser.parseTemperatureAll(tempRaw.value) : [];
+
+    const tempValues = tempSlots.map((t) => t.temperature_c).filter(Number.isFinite);
+    const avgTemp    = tempValues.length ? Number((tempValues.reduce((a, b) => a + b, 0) / tempValues.length).toFixed(2)) : null;
+    const maxTemp    = tempValues.length ? Number(Math.max(...tempValues).toFixed(2)) : null;
+
+    return { uptime_seconds: uptime, avg_temperature_c: avgTemp, max_temperature_c: maxTemp };
+  });
+}
+
 export async function getDashboardSummary() {
   return withCache('dashboard-summary', TTL.dashboard, async () => {
     const previousSummary = getCachedValue('dashboard-summary');
-    const ontsResult = await safeDashboardLoad(() => getOntList(), getCachedValue('onts:all:all'));
-    const boardsResult = await safeDashboardLoad(() => getBoards(), getCachedValue('boards'));
-    const alarmsResult = await safeDashboardLoad(() => getAlarms(), getCachedValue('alarms'));
-    const autofindResult = await safeDashboardLoad(() => getAutofind(), getCachedValue('autofind'));
-    const gponPortsResult = await safeDashboardLoad(
-      () => withTimeout(getGponPortStates(1), 12_000, 'Telemetria GPON excedeu o tempo limite'),
-      getCachedValue('gpon-port-states:1'),
-    );
+    const ontsResult       = await safeDashboardLoad(() => getOntList(), getCachedValue('onts:all:all'));
+    const boardsResult     = await safeDashboardLoad(() => getBoards(), getCachedValue('boards'));
+    const alarmsResult     = await safeDashboardLoad(() => getAlarms(), getCachedValue('alarms'));
+    const autofindResult   = await safeDashboardLoad(() => getAutofind(), getCachedValue('autofind'));
+    const sshMetricsResult = await safeDashboardLoad(() => getSystemMetrics(), getCachedValue('system-metrics'));
 
     const onts = ontsResult.value?.onts ?? [];
     const boards = boardsResult.value?.boards ?? [];
     const alarms = alarmsResult.value?.alarms ?? [];
     const autofind = autofindResult.value?.onts ?? [];
-    const gponPorts = gponPortsResult.value?.ports ?? [];
-    const firstError = [ontsResult, boardsResult, alarmsResult, autofindResult, gponPortsResult].find((result) => !result.ok);
-    const anySuccess = [ontsResult, boardsResult, alarmsResult, autofindResult, gponPortsResult].some((result) => result.ok || result.fromCache);
+    const sshMetrics = sshMetricsResult.ok ? sshMetricsResult.value : null;
+    const firstError = [ontsResult, boardsResult, alarmsResult, autofindResult, sshMetricsResult].find((result) => !result.ok && !result.skipped);
+    const anySuccess = [ontsResult, boardsResult, alarmsResult, autofindResult, sshMetricsResult].some((result) => result.ok || result.fromCache);
     const status = anySuccess
       ? {
           connected: true,
@@ -343,54 +360,60 @@ export async function getDashboardSummary() {
       const onlineState = String(board.online_state || '').toLowerCase();
       return boardStatus.includes('failed') || onlineState.includes('offline');
     }).length;
-    const onlineGponPorts = gponPorts.filter((port) => String(port.port_state || '').toLowerCase() === 'online').length;
-    const avgPortTemperature = averageMetric(
-      gponPorts
-        .map((port) => Number.parseFloat(port.temperature_c))
-        .filter((value) => Number.isFinite(value))
-    );
-    const maxPortTemperature = maxMetric(
-      gponPorts
-        .map((port) => Number.parseFloat(port.temperature_c))
-        .filter((value) => Number.isFinite(value))
-    );
-    const totalAvailableBandwidthGbps = sumMetric(
-      gponPorts
-        .map((port) => Number.parseFloat(port.available_bandwidth_kbps))
-        .filter((value) => Number.isFinite(value))
-        .map((value) => value / 1_000_000)
-    );
-    const avgPortTxPowerDbm = averageMetric(
-      gponPorts
-        .map((port) => Number.parseFloat(port.tx_power_dbm))
-        .filter((value) => Number.isFinite(value))
-    );
-
     const summary = {
       status,
       boards,
       alarms,
       autofind,
-      gpon_ports: gponPorts,
+      recent_logs: listOltLogs({ limit: 6 }),
+      gpon_ports: [],
       onts_total: onts.length,
       onts_online: onlineOnts.length,
       metrics: {
-        gpon_ports_total: gponPorts.length,
-        gpon_ports_online: onlineGponPorts,
-        avg_port_temperature_c: avgPortTemperature,
-        max_port_temperature_c: maxPortTemperature,
-        total_available_bandwidth_gbps: totalAvailableBandwidthGbps,
-        avg_port_tx_power_dbm: avgPortTxPowerDbm,
+        gpon_ports_total: 0,
+        gpon_ports_online: 0,
+        avg_port_temperature_c: null,
+        max_port_temperature_c: null,
+        total_available_bandwidth_gbps: null,
+        avg_port_tx_power_dbm: null,
         boards_active: activeBoards,
         boards_faulty: faultyBoards,
+        cpu_percent: null,
+        memory_percent: null,
+        avg_temperature_c: sshMetrics?.avg_temperature_c ?? null,
+        max_temperature_c: sshMetrics?.max_temperature_c ?? null,
+        total_uplink_in_gbps: null,
+        total_uplink_out_gbps: null,
+        olt_uptime_seconds: sshMetrics?.uptime_seconds ?? null,
       },
     };
 
     if (!anySuccess && previousSummary) {
+      try {
+        writeOltLog({
+          source: 'dashboard_snapshot',
+          level: 'error',
+          message: 'Falha ao atualizar snapshot da OLT',
+          detail: status.message,
+          metadata: { connected: false, cached_fallback: true },
+          fingerprint: `dashboard-error:${status.message}`,
+          dedupeByFingerprint: true,
+        });
+      } catch {
+        // Ignora falha de escrita de log.
+      }
+
       return {
         ...previousSummary,
         status,
       };
+    }
+
+    try {
+      logDashboardSummary(summary);
+      summary.recent_logs = listOltLogs({ limit: 6 });
+    } catch {
+      // Logs operacionais não devem quebrar o dashboard.
     }
 
     return summary;
@@ -407,38 +430,4 @@ async function safeDashboardLoad(loader, fallbackValue) {
     }
     return { ok: false, error, fromCache: false };
   }
-}
-
-function withTimeout(promise, ms, message) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]);
-}
-
-function averageMetric(values) {
-  if (!values.length) {
-    return null;
-  }
-
-  const total = values.reduce((sum, value) => sum + value, 0);
-  return Number((total / values.length).toFixed(2));
-}
-
-function maxMetric(values) {
-  if (!values.length) {
-    return null;
-  }
-
-  return Number(Math.max(...values).toFixed(2));
-}
-
-function sumMetric(values) {
-  if (!values.length) {
-    return null;
-  }
-
-  return Number(values.reduce((sum, value) => sum + value, 0).toFixed(2));
 }

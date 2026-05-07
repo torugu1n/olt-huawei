@@ -11,6 +11,7 @@ import config         from './config.js';
 import authRoutes     from './auth/routes.js';
 import auditRoutes    from './audit/routes.js';
 import oltRoutes      from './olt/routes.js';
+import settingsRoutes from './settings/routes.js';
 import { warmupPersistentSession } from './olt/ssh.js';
 import terminalRoutes from './terminal/routes.js';
 
@@ -48,6 +49,7 @@ app.setErrorHandler((err, req, reply) => {
 await app.register(authRoutes,     { prefix: '/api/auth' });
 await app.register(auditRoutes,    { prefix: '/api/audit' });
 await app.register(oltRoutes,      { prefix: '/api/olt' });
+await app.register(settingsRoutes, { prefix: '/api/settings' });
 await app.register(terminalRoutes);
 
 // Serve o frontend compilado (se existir)

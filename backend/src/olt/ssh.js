@@ -6,6 +6,7 @@
  */
 import { Client } from 'ssh2';
 import config from '../config.js';
+import { getParsedRuntimeSettings } from '../settings/service.js';
 
 // Prompt VRP: considera apenas a ultima linha para evitar falsos positivos no meio do output.
 const PROMPT_RE = /(?:^|\r?\n)[^\r\n]*[>#]\s*$/;
@@ -132,12 +133,13 @@ let lastSessionOpenAt = 0;
 const SESSION_OPEN_GAP_MS = 4_000;
 
 function sshParams() {
+  const settings = getParsedRuntimeSettings();
   return {
-    host:         config.OLT_HOST,
-    port:         config.OLT_PORT,
-    username:     config.OLT_USERNAME,
-    password:     config.OLT_PASSWORD,
-    readyTimeout: config.OLT_TIMEOUT * 1_000,
+    host:         settings.OLT_HOST,
+    port:         settings.OLT_PORT,
+    username:     settings.OLT_USERNAME,
+    password:     settings.OLT_PASSWORD,
+    readyTimeout: settings.OLT_TIMEOUT * 1_000,
     keepaliveInterval: 30_000,
     algorithms: {
       kex: [
@@ -284,6 +286,14 @@ export async function warmupPersistentSession() {
   }
 }
 
+export function resetPersistentSession() {
+  reconnectBlockedUntil = 0;
+  if (session) {
+    session.close();
+    session = null;
+  }
+}
+
 /**
  * Abre uma shell SSH dedicada (para o terminal WebSocket).
  * O caller é responsável por fechar o stream.
@@ -319,6 +329,7 @@ async function initializeShellSession(sess) {
 }
 
 async function ensurePrivilegedPrompt(sess) {
+  const settings = getParsedRuntimeSettings();
   const initialPrompt = await sess.waitFor(PROMPT_RE, 15_000);
 
   if (PROMPT_PRIV.test(initialPrompt)) return;
@@ -326,13 +337,13 @@ async function ensurePrivilegedPrompt(sess) {
   sess.write('enable\n');
   const afterEnable = await sess.waitFor(PROMPT_RE, 10_000);
   if (PASSWORD_RE.test(sanitizeOutput(afterEnable).trim())) {
-    if (!config.OLT_ENABLE_PASSWORD) {
+    if (!settings.OLT_ENABLE_PASSWORD) {
       throw Object.assign(
         new Error('A OLT solicitou senha para o comando enable. Configure OLT_ENABLE_PASSWORD no .env.'),
         { statusCode: 503 }
       );
     }
-    sess.write(config.OLT_ENABLE_PASSWORD + '\n');
+    sess.write(settings.OLT_ENABLE_PASSWORD + '\n');
     await sess.waitFor(PROMPT_PRIV, 10_000);
     return;
   }
@@ -343,7 +354,8 @@ async function ensurePrivilegedPrompt(sess) {
 }
 
 async function runBootstrapCommands(sess) {
-  for (const command of config.OLT_SESSION_BOOTSTRAP_COMMANDS) {
+  const settings = getParsedRuntimeSettings();
+  for (const command of settings.OLT_SESSION_BOOTSTRAP_COMMANDS) {
     try {
       await sess.sendLine(command, 10_000);
     } catch (error) {
