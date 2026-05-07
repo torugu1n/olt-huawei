@@ -1,8 +1,6 @@
 services:
   olt-manager:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/torugu1n/olt-manager:latest
     container_name: olt-manager
     restart: unless-stopped
     env_file:
@@ -15,6 +13,17 @@ services:
     volumes:
       - olt_manager_data:/data
       - olt_manager_logs:/app/backend/logs
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_POLL_INTERVAL: 300        # verifica a cada 5 minutos
+      WATCHTOWER_CLEANUP: "true"           # remove imagens antigas
+      WATCHTOWER_INCLUDE_STOPPED: "false"
 
 volumes:
   olt_manager_data:
