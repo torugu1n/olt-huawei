@@ -42,7 +42,7 @@ function looksLikeTransientOltBlock(summary: DashboardSummary) {
 }
 
 export function Dashboard() {
-  const { user, openSidebar } = useOutletContext<{ user: AuthToken; openSidebar: () => void }>();
+  const { user } = useOutletContext<{ user: AuthToken }>();
   const cached = readDashboardCache();
   const [status, setStatus] = useState<{ connected: boolean; message: string } | null>(cached?.status ?? null);
   const [boards, setBoards] = useState<Board[]>(cached?.boards ?? []);
@@ -94,14 +94,7 @@ export function Dashboard() {
     <div className="space-y-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
-          <div className="mb-3 flex items-center gap-3">
-            <button
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:border-brand-200 hover:text-brand-700 md:hidden"
-              onClick={openSidebar}
-              aria-label="Abrir menu"
-            >
-              <span className="material-symbols-outlined text-[20px]">menu</span>
-            </button>
+          <div className="mb-3">
             <div className="eyebrow">OLT Summary</div>
           </div>
           <h1 className="font-display text-[1.7rem] font-semibold leading-[1.02] tracking-[-0.03em] text-ink-900 md:text-[2.15rem]">

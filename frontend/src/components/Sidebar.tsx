@@ -106,26 +106,32 @@ export function Sidebar({ user, onLogout, open, onClose, collapsed, onToggleColl
       >
         <div className="flex items-center justify-between border-b border-ink-200 px-5 py-5">
           {!collapsed ? (
-            <div className="min-w-0">
-              <div className="font-display text-[1.05rem] font-semibold tracking-[-0.03em] text-ink-900">
-                Gerenciador de OLTs
+            <>
+              <div className="min-w-0">
+                <div className="font-display text-[1.05rem] font-semibold tracking-[-0.03em] text-ink-900">
+                  Gerenciador de OLTs
+                </div>
+                <div className="mt-1 text-[12px] text-ink-500">{t("app.subtitle")}</div>
               </div>
-              <div className="mt-1 text-[12px] text-ink-500">{t("app.subtitle")}</div>
-            </div>
+              <button
+                onClick={onToggleCollapse}
+                aria-label={t("sidebar.collapse")}
+                title={t("sidebar.collapse")}
+                className="hidden h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:border-ink-300 hover:text-ink-700 md:inline-flex"
+              >
+                <span className="material-symbols-outlined text-[18px]">keyboard_double_arrow_left</span>
+              </button>
+            </>
           ) : (
-            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-200 bg-brand-50 text-brand-700">
-              <span className="material-symbols-outlined text-[18px]">hub</span>
-            </div>
+            <button
+              onClick={onToggleCollapse}
+              aria-label={t("sidebar.expand")}
+              title={t("sidebar.expand")}
+              className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:border-ink-300 hover:text-ink-700"
+            >
+              <span className="material-symbols-outlined text-[22px]">menu</span>
+            </button>
           )}
-
-          <button
-            onClick={onToggleCollapse}
-            aria-label={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
-            title={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
-            className="hidden h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:border-ink-300 hover:text-ink-700 md:inline-flex"
-          >
-            <span className="material-symbols-outlined text-[18px]">{collapsed ? "keyboard_double_arrow_right" : "keyboard_double_arrow_left"}</span>
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-4">
