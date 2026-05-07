@@ -1,7 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useOutletContext } from "react-router-dom";
 import { getProvisionTemplate, provisionOnt } from "../api/client";
-import { ProvisionForm, ProvisionTemplate } from "../types";
+import { AuthToken, ProvisionForm, ProvisionTemplate } from "../types";
 
 const DEFAULT: ProvisionForm = {
   slot: 1, port: 0, sn: "", lineprofile_id: 20, srvprofile_id: 20,
@@ -9,6 +9,8 @@ const DEFAULT: ProvisionForm = {
 };
 
 export function Provision() {
+  const { user } = useOutletContext<{ user: AuthToken }>();
+  const readonly = user?.is_readonly;
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [form, setForm] = useState<ProvisionForm>({
@@ -132,6 +134,12 @@ export function Provision() {
         </div>
       </header>
 
+      {readonly && (
+        <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          Sua conta é somente leitura. O envio para a OLT está desabilitado.
+        </div>
+      )}
+
       {error && (
         <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-4 py-3 text-sm whitespace-pre-wrap text-red-700">
           {error}
@@ -227,7 +235,7 @@ export function Provision() {
             </div>
           </FormPanel>
 
-          <button type="submit" disabled={loading} className="action-primary w-full py-3">
+          <button type="submit" disabled={loading || readonly} className="action-primary w-full py-3 disabled:opacity-40">
             {loading ? "Provisionando..." : "Enviar para a OLT"}
           </button>
         </div>

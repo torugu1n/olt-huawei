@@ -38,6 +38,12 @@ app.decorate('requireAdmin', async function (req, reply) {
     reply.code(403).send({ detail: 'Acesso restrito a administradores' });
 });
 
+// Bloqueia usuários somente-leitura em rotas de escrita
+app.decorate('requireWriteAccess', async function (req, reply) {
+  if (req.user?.is_readonly)
+    reply.code(403).send({ detail: 'Sua conta é somente leitura. Contate o administrador.' });
+});
+
 // Tratamento global de erros de validação
 app.setErrorHandler((err, req, reply) => {
   const code = err.statusCode ?? 500;

@@ -34,6 +34,8 @@ export const listUsers = () => api.get("/auth/users");
 export const createUser = (data: object) => api.post("/auth/users", data);
 export const deleteUser = (id: number) => api.delete(`/auth/users/${id}`);
 export const toggleUser = (id: number) => api.put(`/auth/users/${id}/toggle`);
+export const adminChangePassword = (id: number, new_password: string) =>
+  api.put(`/auth/users/${id}/password`, { new_password });
 export const changePassword = (data: object) => api.post("/auth/change-password", data);
 export const getSettings = () => api.get("/settings");
 export const updateSettings = (data: object) => api.put("/settings", data);

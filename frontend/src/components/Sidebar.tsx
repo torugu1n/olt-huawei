@@ -56,7 +56,7 @@ export function Sidebar({ user, onLogout, open, onClose, collapsed, onToggleColl
         label: t("group.management"),
         icon: "bar_chart",
         items: [
-          { to: "/terminal", label: t("nav.terminal"), icon: "terminal" },
+          ...(!user.is_readonly ? [{ to: "/terminal", label: t("nav.terminal"), icon: "terminal" }] : []),
           { to: "/logs", label: t("nav.audit"), icon: "receipt_long" },
         ],
       },
@@ -217,7 +217,7 @@ export function Sidebar({ user, onLogout, open, onClose, collapsed, onToggleColl
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[13px] font-semibold text-ink-900">{user.full_name || user.username}</div>
-                  <div className="text-[12px] text-ink-400">{user.is_admin ? "Administrador" : "Operador"}</div>
+                  <div className="text-[12px] text-ink-400">{user.is_admin ? "Administrador" : user.is_readonly ? "Somente leitura" : "Operador"}</div>
                 </div>
                 <button
                   onClick={handleLogout}

@@ -13,6 +13,7 @@ db.exec(`
     hashed_password  TEXT    NOT NULL,
     is_active        INTEGER NOT NULL DEFAULT 1,
     is_admin         INTEGER NOT NULL DEFAULT 0,
+    is_readonly      INTEGER NOT NULL DEFAULT 0,
     created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -97,6 +98,12 @@ db.exec(`
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `);
+
+// Migração: adiciona is_readonly a bancos existentes que não possuem a coluna
+const userCols = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
+if (!userCols.includes('is_readonly')) {
+  db.exec('ALTER TABLE users ADD COLUMN is_readonly INTEGER NOT NULL DEFAULT 0');
+}
 
 const templateCount = db.prepare('SELECT COUNT(*) AS count FROM provision_templates').get().count;
 if (templateCount === 0) {

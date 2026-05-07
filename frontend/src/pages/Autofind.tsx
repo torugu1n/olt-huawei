@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { getAutofind, getProvisionTemplate, provisionOnt } from "../api/client";
-import { AutofindONT, ProvisionTemplate } from "../types";
+import { AuthToken, AutofindONT, ProvisionTemplate } from "../types";
 
 export function Autofind() {
+  const { user } = useOutletContext<{ user: AuthToken }>();
+  const readonly = user?.is_readonly;
   const [onts, setOnts] = useState<AutofindONT[]>([]);
   const [loading, setLoading] = useState(true);
   const [raw, setRaw] = useState("");
@@ -177,24 +179,28 @@ export function Autofind() {
                       <td className="px-5 py-4 text-xs text-ink-400">{ont.found_at}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => startDirectProvision(ont)}
-                            disabled={!ont.template_auto_matched || actionSn === ont.sn}
-                            className="font-mono rounded-full border border-brand-200 bg-brand-600 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-white transition hover:bg-brand-700 disabled:border-brand-100 disabled:bg-brand-300"
-                          >
-                            Provisionar direto
-                          </button>
-                          <Link
-                            to={`/provision?sn=${ont.sn}&port=${ont.port}`}
-                            className="font-mono rounded-full border border-ink-200 bg-ink-50 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-ink-100"
-                          >
-                            Editar
-                          </Link>
+                          {!readonly && (
+                            <button
+                              onClick={() => startDirectProvision(ont)}
+                              disabled={!ont.template_auto_matched || actionSn === ont.sn}
+                              className="font-mono rounded-full border border-brand-200 bg-brand-600 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-white transition hover:bg-brand-700 disabled:border-brand-100 disabled:bg-brand-300"
+                            >
+                              Provisionar direto
+                            </button>
+                          )}
+                          {!readonly && (
+                            <Link
+                              to={`/provision?sn=${ont.sn}&port=${ont.port}`}
+                              className="font-mono rounded-full border border-ink-200 bg-ink-50 px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] text-ink-600 transition hover:bg-ink-100"
+                            >
+                              Editar
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>
 
-                    {editingSn === ont.sn && (
+                    {!readonly && editingSn === ont.sn && (
                       <tr className="border-b border-ink-100 bg-brand-50/45">
                         <td colSpan={7} className="px-5 py-5">
                           <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">

@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { setupAdmin } from "../api/client";
 
-export function Setup() {
+export function Setup({ onComplete }: { onComplete: () => void }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", full_name: "", password: "", confirm: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -18,6 +18,7 @@ export function Setup() {
     setError(null);
     try {
       await setupAdmin({ username: form.username, full_name: form.full_name, password: form.password });
+      onComplete();
       navigate("/login", { replace: true });
     } catch (err: any) {
       setError(err?.response?.data?.detail ?? "Erro ao criar conta admin.");

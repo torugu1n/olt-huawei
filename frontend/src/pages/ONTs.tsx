@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { getOnts, deleteOnt, rebootOnt } from "../api/client";
-import { ONT } from "../types";
+import { AuthToken, ONT } from "../types";
 import { StatusBadge } from "../components/StatusBadge";
 
 const ONTS_CACHE_KEY = "onts_inventory_cache";
@@ -26,6 +26,8 @@ function writeOntsCache(data: ONT[]) {
 }
 
 export function ONTs() {
+  const { user } = useOutletContext<{ user: AuthToken }>();
+  const readonly = user?.is_readonly;
   const cachedOnts = readOntsCache();
   const [onts, setOnts] = useState<ONT[]>(cachedOnts);
   const [filtered, setFiltered] = useState<ONT[]>(cachedOnts);
@@ -223,20 +225,24 @@ export function ONTs() {
                             >
                               Detalhes
                             </Link>
-                            <button
-                              onClick={() => handleReboot(ont)}
-                              disabled={actionId === `r-${id}`}
-                              className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800 transition hover:bg-amber-100 disabled:opacity-40"
-                            >
-                              Reboot
-                            </button>
-                            <button
-                              onClick={() => handleDelete(ont)}
-                              disabled={actionId === id}
-                              className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100 disabled:opacity-40"
-                            >
-                              Remover
-                            </button>
+                            {!readonly && (
+                              <button
+                                onClick={() => handleReboot(ont)}
+                                disabled={actionId === `r-${id}`}
+                                className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800 transition hover:bg-amber-100 disabled:opacity-40"
+                              >
+                                Reboot
+                              </button>
+                            )}
+                            {!readonly && (
+                              <button
+                                onClick={() => handleDelete(ont)}
+                                disabled={actionId === id}
+                                className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100 disabled:opacity-40"
+                              >
+                                Remover
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -268,20 +274,24 @@ export function ONTs() {
                     >
                       Detalhes
                     </Link>
-                    <button
-                      onClick={() => handleReboot(ont)}
-                      disabled={actionId === `r-${id}`}
-                      className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800 transition hover:bg-amber-100 disabled:opacity-40"
-                    >
-                      Reboot
-                    </button>
-                    <button
-                      onClick={() => handleDelete(ont)}
-                      disabled={actionId === id}
-                      className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100 disabled:opacity-40"
-                    >
-                      Remover
-                    </button>
+                    {!readonly && (
+                      <button
+                        onClick={() => handleReboot(ont)}
+                        disabled={actionId === `r-${id}`}
+                        className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-amber-800 transition hover:bg-amber-100 disabled:opacity-40"
+                      >
+                        Reboot
+                      </button>
+                    )}
+                    {!readonly && (
+                      <button
+                        onClick={() => handleDelete(ont)}
+                        disabled={actionId === id}
+                        className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-red-700 transition hover:bg-red-100 disabled:opacity-40"
+                      >
+                        Remover
+                      </button>
+                    )}
                   </div>
                 </div>
               );

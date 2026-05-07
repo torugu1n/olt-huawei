@@ -19,7 +19,8 @@ import { writeAudit } from '../audit/routes.js';
 import { listOltLogs, writeOltLog } from './logs.js';
 
 export default async function oltRoutes(fastify) {
-  const auth = { onRequest: [fastify.authenticate] };
+  const auth      = { onRequest: [fastify.authenticate] };
+  const authWrite = { onRequest: [fastify.authenticate, fastify.requireWriteAccess] };
 
   function normalizeTemplatePayload(body = {}) {
     const name = String(body.name ?? '').trim();
@@ -253,7 +254,7 @@ export default async function oltRoutes(fastify) {
   });
 
   // ── Provisionar ────────────────────────────────────────────────────────────
-  fastify.post('/provision', auth, async (req, reply) => {
+  fastify.post('/provision', authWrite, async (req, reply) => {
     const b = req.body;
     const slot         = v.validateSlot(b.slot);
     const port         = v.validatePort(b.port);
@@ -297,7 +298,7 @@ export default async function oltRoutes(fastify) {
   });
 
   // ── Service Port ───────────────────────────────────────────────────────────
-  fastify.post('/service-port', auth, async (req) => {
+  fastify.post('/service-port', authWrite, async (req) => {
     const b = req.body;
     const slot   = v.validateSlot(b.slot);
     const port   = v.validatePort(b.port);
@@ -320,7 +321,7 @@ export default async function oltRoutes(fastify) {
     return { success: true, raw };
   });
 
-  fastify.delete('/service-port/:index', auth, async (req) => {
+  fastify.delete('/service-port/:index', authWrite, async (req) => {
     const index = Number(req.params.index);
     const raw = await cmd.deleteServicePort(index);
     cmd.clearOltCache();
@@ -337,7 +338,7 @@ export default async function oltRoutes(fastify) {
   });
 
   // ── Deletar ONT ────────────────────────────────────────────────────────────
-  fastify.delete('/onts/:slot/:port/:ontId', auth, async (req) => {
+  fastify.delete('/onts/:slot/:port/:ontId', authWrite, async (req) => {
     const { slot, port, ontId } = req.params;
     v.validateSlot(slot); v.validatePort(port); v.validateOntId(ontId);
     const raw = await cmd.deleteOnt(+slot, +port, +ontId);
@@ -355,7 +356,7 @@ export default async function oltRoutes(fastify) {
   });
 
   // ── Reboot ONT ─────────────────────────────────────────────────────────────
-  fastify.post('/onts/:slot/:port/:ontId/reboot', auth, async (req) => {
+  fastify.post('/onts/:slot/:port/:ontId/reboot', authWrite, async (req) => {
     const { slot, port, ontId } = req.params;
     v.validateSlot(slot); v.validatePort(port); v.validateOntId(ontId);
     const raw = await cmd.rebootOnt(+slot, +port, +ontId);

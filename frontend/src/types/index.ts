@@ -4,6 +4,7 @@ export interface User {
   full_name: string;
   is_active: boolean;
   is_admin: boolean;
+  is_readonly: boolean;
 }
 
 export interface AuthToken {
@@ -12,6 +13,7 @@ export interface AuthToken {
   username: string;
   full_name: string;
   is_admin: boolean;
+  is_readonly: boolean;
 }
 
 export interface Board {

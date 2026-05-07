@@ -41,7 +41,7 @@ export default function App() {
       </a>
       <Routes>
         <Route path="/setup" element={
-          needsSetup ? <Setup /> : <Navigate to="/login" replace />
+          needsSetup ? <Setup onComplete={() => setNeedsSetup(false)} /> : <Navigate to="/login" replace />
         } />
 
         <Route path="/login" element={
@@ -58,7 +58,7 @@ export default function App() {
           <Route path="/onts/:slot/:port/:ont_id" element={<ONTDetail />} />
           <Route path="/autofind" element={<Autofind />} />
           <Route path="/provision" element={<Provision />} />
-          <Route path="/terminal" element={<Terminal />} />
+          <Route path="/terminal" element={user?.is_readonly ? <Navigate to="/" replace /> : <Terminal />} />
           <Route path="/logs" element={<LogsPage />} />
           <Route path="/audit" element={<Navigate to="/logs" replace />} />
           {user?.is_admin && <Route path="/users" element={<Users />} />}
