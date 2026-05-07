@@ -9,3 +9,5 @@ backend/olt_manager.db-wal
 venv
 .git
 .DS_Store
+.env
+SNMP_PLAN.md

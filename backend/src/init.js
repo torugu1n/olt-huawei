@@ -1,15 +1,9 @@
 import db from './db.js';
-import bcrypt from 'bcryptjs';
 
-const existing = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
-if (!existing) {
-  const hash = bcrypt.hashSync('admin123', 10);
-  db.prepare(`
-    INSERT INTO users (username, full_name, hashed_password, is_admin)
-    VALUES (?, ?, ?, 1)
-  `).run('admin', 'Administrador', hash);
-  console.log('✓ Usuário admin criado  →  senha: admin123');
-  console.log('  IMPORTANTE: troque a senha após o primeiro login!');
+const { count } = db.prepare('SELECT COUNT(*) AS count FROM users').get();
+if (count === 0) {
+  console.log('✓ Banco inicializado — nenhum usuário encontrado.');
+  console.log('  Acesse a aplicação no navegador para criar a conta admin.');
 } else {
-  console.log('✓ Banco já inicializado');
+  console.log(`✓ Banco inicializado — ${count} usuário(s) registrado(s).`);
 }
